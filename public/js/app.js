@@ -160,20 +160,39 @@ async function loadHeroes() {
     const result = await response.json();
     
     if (result.success && result.data.length > 0) {
-      const heroesHTML = result.data.map(hero => `
-        <div style="background-color: #ffffff; padding: 15px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 15px;">
-          <div style="display: grid; grid-template-columns: 100px 1fr auto; gap: 15px; align-items: center;">
-            ${hero.imageUrl ? `<img src="${hero.imageUrl}" alt="${hero.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">` : '<div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">No Image</div>'}
-            <div>
-              <h3 style="color: var(--color-orange); margin-bottom: 8px;">${hero.name}</h3>
-              <p style="color: #000000; margin-bottom: 4px;"><strong>Type:</strong> ${hero.type} | <strong>Rarity:</strong> ${hero.rarity}</p>
-              <p style="color: #000000; margin-bottom: 4px;"><strong>Stats:</strong> ATK: ${hero.attack} | DEF: ${hero.defense} | HP: ${hero.hp}</p>
-              ${hero.description ? `<p style="color: #666666; font-size: 13px;">${hero.description}</p>` : ''}
-            </div>
-            <button onclick="deleteHero('${hero._id}')" style="padding: 8px 16px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">Delete</button>
+      // Group heroes by name
+      const groupedHeroes = {};
+      result.data.forEach(hero => {
+        const heroName = hero.name || hero.heroname;
+        if (!groupedHeroes[heroName]) {
+          groupedHeroes[heroName] = [];
+        }
+        groupedHeroes[heroName].push(hero);
+      });
+      
+      // Generate HTML for grouped heroes
+      const heroesHTML = Object.entries(groupedHeroes).map(([heroName, skins]) => {
+        const firstHero = skins[0];
+        const skinsHTML = skins.map(hero => `
+          <div style="text-align: center;">
+            ${hero.imageUrl || hero.heroPicture ? 
+              `<img src="${hero.imageUrl || hero.heroPicture}" alt="${heroName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; display: block; margin-bottom: 8px;">` : 
+              '<div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin-bottom: 8px;">No Image</div>'
+            }
+            <button onclick="deleteHero('${hero._id}')" style="padding: 6px 12px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Delete</button>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+        
+        return `
+          <div style="background-color: #ffffff; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 15px;">
+            <h3 style="color: var(--color-orange); margin-bottom: 8px; font-size: 18px;">${heroName}</h3>
+            <p style="color: #000000; margin-bottom: 15px;"><strong>Rarity:</strong> ${firstHero.rarity} | <strong>Skins:</strong> ${skins.length}</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px;">
+              ${skinsHTML}
+            </div>
+          </div>
+        `;
+      }).join('');
       
       heroListContainer.innerHTML = heroesHTML;
     } else {
@@ -369,12 +388,7 @@ function attachHeroFormHandler() {
       // Create hero with uploaded image URL
       const heroData = {
         name: document.getElementById('hero-name').value,
-        type: document.getElementById('hero-type').value,
-        attack: parseInt(document.getElementById('hero-attack').value),
-        defense: parseInt(document.getElementById('hero-defense').value),
-        hp: parseInt(document.getElementById('hero-hp').value),
         rarity: document.getElementById('hero-rarity').value,
-        description: document.getElementById('hero-description').value,
         imageUrl: imageUrl
       };
       

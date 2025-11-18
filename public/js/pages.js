@@ -221,56 +221,25 @@ function renderAdminPage() {
                 </div>
                 
                 <div>
-                  <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Hero Type</label>
-                  <select id="hero-type" required style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
-                    <option value="">Select Type</option>
-                    <option value="Physical">Physical</option>
-                    <option value="Magic">Magic</option>
-                    <option value="Support">Support</option>
-                    <option value="Tank">Tank</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Attack</label>
-                  <input type="number" id="hero-attack" required min="0" style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
-                </div>
-                
-                <div>
-                  <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Defense</label>
-                  <input type="number" id="hero-defense" required min="0" style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
-                </div>
-                
-                <div>
-                  <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">HP</label>
-                  <input type="number" id="hero-hp" required min="0" style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
-                </div>
-                
-                <div>
                   <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Rarity</label>
                   <select id="hero-rarity" required style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
                     <option value="">Select Rarity</option>
-                    <option value="Common">Common</option>
-                    <option value="Rare">Rare</option>
-                    <option value="Epic">Epic</option>
-                    <option value="Legendary">Legendary</option>
+                    <option value="L2">L2</option>
+                    <option value="L1">L1</option>
+                    <option value="L0">L0</option>
+                    <option value="R">R</option>
                   </select>
                 </div>
               </div>
               
               <div style="margin-top: 20px;">
                 <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Hero Image</label>
-                <input type="file" id="hero-image-file" accept="image/*" style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
+                <input type="file" id="hero-image-file" accept="image/*" required style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
                 <small style="color: #666666; display: block; margin-top: 4px;">Upload an image (max 5MB). It will be automatically uploaded to GitHub.</small>
                 <div id="hero-image-preview" style="margin-top: 10px; display: none;">
                   <img id="hero-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 2px solid var(--color-orange); border-radius: 4px;">
                 </div>
                 <input type="hidden" id="hero-image-url">
-              </div>
-              
-              <div style="margin-top: 20px;">
-                <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Description</label>
-                <textarea id="hero-description" rows="3" style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px; resize: vertical;"></textarea>
               </div>
               
               <button type="submit" style="margin-top: 20px; padding: 12px 30px; background-color: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">

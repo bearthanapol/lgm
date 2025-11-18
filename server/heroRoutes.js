@@ -55,20 +55,20 @@ router.post('/', async (req, res) => {
   try {
     const { name, type, attack, defense, hp, rarity, description, imageUrl } = req.body;
     
-    // Validation
-    if (!name || !type || attack === undefined || defense === undefined || hp === undefined || !rarity) {
+    // Validation - only name and rarity are required
+    if (!name || !rarity) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: name, type, attack, defense, hp, rarity'
+        error: 'Missing required fields: name, rarity'
       });
     }
     
     const heroData = {
       name,
-      type,
-      attack: parseInt(attack),
-      defense: parseInt(defense),
-      hp: parseInt(hp),
+      type: type || '',
+      attack: attack ? parseInt(attack) : 0,
+      defense: defense ? parseInt(defense) : 0,
+      hp: hp ? parseInt(hp) : 0,
       rarity,
       description: description || '',
       imageUrl: imageUrl || ''
