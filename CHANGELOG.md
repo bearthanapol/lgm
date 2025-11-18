@@ -1,0 +1,179 @@
+# Changelog - Admin Panel Enhancements
+
+## Version 2.0 - Admin Panel Upgrade
+
+### 🎉 New Features
+
+#### 1. Automatic Image Upload to GitHub
+- **No more manual uploads!** Upload hero images directly from the admin panel
+- Images are automatically uploaded to your GitHub repository
+- System generates and saves GitHub raw URLs
+- Image preview before upload
+- File validation (type and size)
+- Maximum file size: 5MB
+- Supported formats: PNG, JPG, GIF, and other image formats
+
+#### 2. News & Updates Management System
+- Create and manage news posts and game updates
+- Four categories: General, Game Update, Event, Maintenance
+- Draft and publish functionality
+- Color-coded categories for easy identification
+- Timestamp tracking
+- Delete functionality
+
+#### 3. Tabbed Admin Interface
+- Clean, organized layout with tabs
+- **Manage Heroes** tab - Hero management with image upload
+- **News & Updates** tab - News creation and management
+- Easy switching between sections
+
+### 🔧 Technical Changes
+
+#### New Dependencies
+- `multer` - File upload handling
+- `@octokit/rest` - GitHub API integration
+- `dotenv` - Environment variable management
+
+#### New Backend Files
+- `server/githubUpload.js` - GitHub upload service
+- `server/newsModel.js` - News database operations
+- `server/newsRoutes.js` - News API endpoints
+- `server/uploadRoutes.js` - Image upload endpoints
+
+#### New API Endpoints
+- `POST /api/upload/hero-image` - Upload hero image
+- `POST /api/upload/news-image` - Upload news image
+- `GET /api/news` - Get all news
+- `POST /api/news` - Create news
+- `PUT /api/news/:id` - Update news
+- `DELETE /api/news/:id` - Delete news
+- `GET /api/news/category/:category` - Get news by category
+
+#### Database Changes
+- New collection: `news_db`
+  - Stores news posts with title, content, category, published status
+  - Timestamps for creation and updates
+
+#### Frontend Changes
+- Enhanced `public/js/pages.js` - New admin page layout with tabs
+- Enhanced `public/js/app.js` - New admin functionality handlers
+  - `setupAdminTabs()` - Tab switching
+  - `attachImagePreviewHandler()` - Image preview
+  - `attachHeroFormHandler()` - Hero form with upload
+  - `attachNewsFormHandler()` - News form handler
+  - `loadNews()` - Load and display news
+  - `deleteNews()` - Delete news posts
+
+### 📁 New Files Created
+- `.env.example` - Environment variable template
+- `GITHUB_SETUP.md` - GitHub token setup guide
+- `ADMIN_FEATURES.md` - Admin features documentation
+- `QUICK_START.md` - Quick start guide
+- `CHANGELOG.md` - This file
+- `images/heroes/.gitkeep` - Hero images folder
+- `images/news/.gitkeep` - News images folder
+
+### 🔐 Security Enhancements
+- Environment variable support for sensitive data
+- GitHub token stored securely in `.env` file
+- File type validation for uploads
+- File size limits (5MB)
+
+### 📝 Documentation
+- Comprehensive setup guides
+- API documentation
+- Feature usage instructions
+- Troubleshooting guides
+
+### 🎨 UI Improvements
+- Tabbed interface for better organization
+- Image preview before upload
+- Color-coded news categories
+- Loading states and error handling
+- Success/error toast notifications
+
+### ⚙️ Configuration Required
+
+To use the new features, you must:
+
+1. Create a GitHub Personal Access Token
+2. Add it to `.env` file as `GITHUB_TOKEN`
+3. Restart the server
+
+See `QUICK_START.md` for step-by-step instructions.
+
+### 🐛 Bug Fixes
+- None (new features)
+
+### 🔄 Breaking Changes
+- None (backward compatible)
+
+### 📊 Database Schema Updates
+
+#### New Collection: news_db
+```javascript
+{
+  _id: ObjectId,
+  title: String,
+  content: String,
+  category: String,  // general, update, event, maintenance
+  author: String,
+  published: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+#### Updated Collection: Hero_db
+- No schema changes
+- `heroPicture` field now populated automatically via upload
+
+### 🚀 Performance
+- Images served from GitHub CDN
+- No server storage required for images
+- Efficient database queries
+- Optimized frontend rendering
+
+### 🔮 Future Enhancements
+- Rich text editor for news content
+- Image editing/cropping
+- Bulk hero import
+- News scheduling
+- Analytics dashboard
+- Image compression
+- Multiple image upload
+
+### 📦 Package Updates
+```json
+{
+  "multer": "^1.4.5-lts.1",
+  "@octokit/rest": "^20.0.2",
+  "dotenv": "^16.3.1"
+}
+```
+
+### 🎯 Requirements Satisfied
+- Admin can upload hero images without manual GitHub operations
+- Admin can post news and game updates
+- Clean, organized admin interface
+- Automatic image URL management
+- Draft and publish workflow for news
+
+---
+
+## How to Update
+
+If you're updating from a previous version:
+
+1. Pull the latest code
+2. Install new dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up GitHub token (see `QUICK_START.md`)
+4. Restart the server:
+   ```bash
+   npm start
+   ```
+
+That's it! Your admin panel is now upgraded with new features.
