@@ -8,45 +8,72 @@ The Admin Panel now includes two main sections:
 
 ## Features
 
-### 1. Hero Management with Image Upload
+### 1. Hero Management with Image Upload & Cropping
 
 #### Adding a Hero
 
 1. Navigate to **Admin Panel** → **Manage Heroes** tab
 2. Fill in the hero details:
-   - **Hero Name**: Name of the hero
-   - **Hero Type**: Physical, Magic, Support, or Tank
-   - **Attack**: Attack stat (number)
-   - **Defense**: Defense stat (number)
-   - **HP**: Health points (number)
-   - **Rarity**: Common, Rare, Epic, or Legendary
-   - **Hero Image**: Click to upload an image file (PNG, JPG, etc.)
+   - **Hero Name**: Name of the hero (required)
+   - **Rarity**: L2, L1, L0, or R (required)
+   - **Hero Image**: Two options:
+     - **Upload New**: Click "Choose File" to upload an image
+     - **Select from Database**: Click blue button to choose from existing hero images
      - Maximum file size: 5MB
-     - Image will be automatically uploaded to GitHub
-     - Preview will appear after selection
-   - **Description**: Optional description of the hero
+     - **Image Cropper** opens automatically after selection
+     - Adjust crop area (move, resize, or create new selection)
+     - Click "Apply Crop" to confirm
+     - Preview will appear after cropping
 
 3. Click **Add Hero**
 4. The system will:
-   - Upload the image to `images/heroes/` in your GitHub repository
+   - Upload the cropped image to `images/heroes/` in your GitHub repository
    - Save the hero with the GitHub image URL
    - Display success notification
    - Refresh the hero list
 
+#### Image Cropper Features
+
+**Controls:**
+- **Move**: Click inside the orange box and drag to reposition
+- **Resize**: Click and drag edges or corners to resize
+- **New Selection**: Click outside the box to create a new crop area
+- **Square Crop**: Button to create a centered square crop
+- **Reset**: Button to reset to full image
+
+**Tips:**
+- Cursor changes to show available actions (move, resize, crosshair)
+- No need to reset - just adjust the crop area as needed
+- Use Square Crop for consistent hero portraits
+
 #### Viewing Heroes
 
 - All heroes are displayed in the "Hero List" section
+- Heroes are grouped by name (showing all skin variants together)
 - Each hero card shows:
-  - Hero image (if uploaded)
-  - Name, Type, and Rarity
-  - Stats (ATK, DEF, HP)
-  - Description
-  - Delete button
+  - Hero name and rarity
+  - Number of skins
+  - All skin images (180x180px)
+  - **Edit** button (blue) - Opens cropper to edit the image
+  - **Delete** button (red) - Removes the hero
+
+#### Editing a Hero Image
+
+1. Find the hero in the Hero List
+2. Click the blue **Edit** button under the image
+3. Image Cropper opens with the current image
+4. Adjust the crop area as needed
+5. Click **Apply Crop**
+6. Image updates instantly (shows local preview with green border)
+7. Background upload to GitHub (overwrites original file)
+8. After page refresh, shows updated image from GitHub
+
+**Note**: GitHub CDN may take 1-5 minutes to update. The local preview shows immediately.
 
 #### Deleting a Hero
 
 1. Find the hero in the Hero List
-2. Click the **Delete** button
+2. Click the red **Delete** button
 3. Confirm the deletion
 4. Hero will be removed from the database
 
@@ -191,11 +218,25 @@ See `GITHUB_SETUP.md` for detailed instructions.
 - No additional server load for image hosting
 - Images are cached by browsers
 
+## Image Cropper Details
+
+For complete documentation on the image cropper feature, see `IMAGE_CROPPER_FEATURE.md`.
+
+**Key Features:**
+- Interactive crop area with move and resize
+- Select images from database for creating variants
+- Edit existing hero images with instant preview
+- Automatic GitHub upload with unique filenames
+- Cache handling for immediate visual feedback
+
 ## Future Enhancements
 
 Potential features to add:
 - Rich text editor for news content
-- Image editing/cropping before upload
+- ~~Image editing/cropping before upload~~ ✅ **IMPLEMENTED**
+- Aspect ratio lock for cropper
+- Zoom in/out on images
+- Rotate images before crop
 - Bulk hero import from CSV
 - News scheduling (publish at specific time)
 - News categories filtering

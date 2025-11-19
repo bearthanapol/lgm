@@ -1,5 +1,45 @@
 # Changelog - Admin Panel Enhancements
 
+## Version 2.1 - Image Cropper Feature (Current)
+
+### 🎉 New Features
+
+#### 1. Advanced Image Cropper
+- **Interactive crop tool** with move and resize capabilities
+- Opens automatically when uploading new hero images
+- **Select from Database** - Choose existing hero images to create variants
+- **Edit existing heroes** - Blue "Edit" button to re-crop hero images
+- Instant preview with local cache (green border indicates updated)
+- Smooth UX with drag-to-move and edge/corner resize
+- Square crop button for perfect 1:1 ratios
+- Reset button to start over
+
+#### 2. Improved Hero Image Management
+- Larger image frames (180x180px) for better visibility
+- Grouped heroes by name showing all skin variants
+- Edit and Delete buttons for each hero image
+- Cache-busting for immediate visual updates
+- Unique filenames prevent image conflicts
+
+### 🔧 Technical Changes
+
+#### New Frontend Files
+- `public/js/imageCropper.js` - Canvas-based image cropper class
+
+#### Updated Files
+- `public/js/app.js` - Added editHeroImage, showDatabaseImageSelector functions
+- `public/js/pages.js` - Added "Select from Database" button
+- `index.html` - Added imageCropper.js script
+
+#### Key Improvements
+- Cropper supports both File objects and URLs
+- Move crop area by clicking inside
+- Resize by dragging edges or corners
+- Create new selection by clicking outside
+- Instant local preview using URL.createObjectURL()
+- Overwrites original file when editing (same filename)
+- Unique timestamp-based filenames for new uploads
+
 ## Version 2.0 - Admin Panel Upgrade
 
 ### 🎉 New Features

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Grid Splitting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .upload-section {
+            border: 2px solid #ff6600;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .result-section {
+            margin-top: 20px;
+        }
+        .grid-overlay {
+            max-width: 100%;
+            border: 2px solid #00cc66;
+            margin: 20px 0;
+        }
+        .cells-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .cell {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: center;
+        }
+        .cell img {
+            width: 100%;
+            height: auto;
+        }
+        button {
+            background-color: #ff6600;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .info {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug: Grid Splitting Test</h1>
+    
+    <div class="upload-section">
+        <h2>Upload Screenshot</h2>
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="uploadBtn" onclick="uploadAndTest()">Test Grid Splitting</button>
+        
+        <div id="preview" style="margin-top: 20px; display: none;">
+            <h3>Original Image:</h3>
+            <img id="previewImg" style="max-width: 100%; border: 2px solid #ccc;">
+        </div>
+    </div>
+    
+    <div id="results" class="result-section" style="display: none;">
+        <h2>Results</h2>
+        
+        <div class="info">
+            <p><strong>Original Dimensions:</strong> <span id="originalDims"></span></p>
+            <p><strong>Cell Dimensions:</strong> <span id="cellDims"></span></p>
+            <p><strong>Total Cells Extracted:</strong> <span id="totalCells"></span></p>
+            <p><strong>Heroes in Database:</strong> <span id="heroCount"></span></p>
+        </div>
+        
+        <h3>Hero Database (Images used for matching):</h3>
+        <div id="heroDatabase" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; padding: 15px; background-color: #f0f0f0; border: 2px solid #ff6600; border-radius: 4px;">
+        </div>
+        
+        <h3>Grid Overlay (Green lines show how image is split):</h3>
+        <img id="gridOverlay" class="grid-overlay">
+        
+        <h3>Extracted Cells (First 10):</h3>
+        <div id="cellsGrid" class="cells-grid"></div>
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('previewImg');
+        const results = document.getElementById('results');
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImg.src = event.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        async function uploadAndTest() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select an image first');
+                return;
+            }
+            
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Processing...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('screenshot', file);
+                
+                const response = await fetch('/api/debug/split-grid', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result.data);
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to process image: ' + error.message);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Test Grid Splitting';
+            }
+        }
+        
+        function displayResults(data) {
+            document.getElementById('originalDims').textContent = 
+                `${data.originalDimensions.width} × ${data.originalDimensions.height}`;
+            document.getElementById('cellDims').textContent = 
+                `${data.cellDimensions.width} × ${data.cellDimensions.height}`;
+            document.getElementById('totalCells').textContent = data.totalCells;
+            document.getElementById('heroCount').textContent = data.heroDatabase ? data.heroDatabase.length : 0;
+            
+            // Display hero database
+            const heroDbDiv = document.getElementById('heroDatabase');
+            if (data.heroDatabase && data.heroDatabase.length > 0) {
+                heroDbDiv.innerHTML = data.heroDatabase.map(hero => `
+                    <div style="text-align: center; background-color: white; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                        <img src="${hero.imageUrl}" alt="${hero.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; margin-bottom: 5px;">
+                        <p style="font-size: 11px; font-weight: bold; margin: 0;">${hero.name}</p>
+                        <p style="font-size: 9px; color: #666; margin: 0;">${hero.rarity}</p>
+                    </div>
+                `).join('');
+            } else {
+                heroDbDiv.innerHTML = '<p style="color: #999; padding: 20px;">No heroes in database. Add heroes in Admin Panel first.</p>';
+            }
+            
+            document.getElementById('gridOverlay').src = 
+                'data:image/png;base64,' + data.gridOverlay;
+            
+            const cellsGrid = document.getElementById('cellsGrid');
+            cellsGrid.innerHTML = data.extractedCells.map(cell => {
+                const match = cell.match || {};
+                const isMatched = match.heroName && match.heroName !== 'Unknown';
+                const bgColor = isMatched ? '#ccffcc' : '#ffcccc';
+                const similarity = Math.round((match.similarity || 0) * 100);
+                
+                return `
+                    <div class="cell" style="background-color: ${bgColor};">
+                        <img src="data:image/png;base64,${cell.base64}" alt="Cell ${cell.position}">
+                        <p style="font-size: 10px; margin: 5px 0 0 0; font-weight: bold; color: ${isMatched ? '#006600' : '#cc0000'};">
+                            ${match.heroName || 'Unknown'}
+                        </p>
+                        <p style="font-size: 9px; margin: 2px 0; color: #666;">
+                            ${match.rarity || '-'} | ${similarity}%
+                        </p>
+                        <p style="font-size: 8px; margin: 2px 0; color: #999;">
+                            R${cell.row}C${cell.col}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+            
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

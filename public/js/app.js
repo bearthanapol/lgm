@@ -119,6 +119,15 @@ router.addRoute('/guild/adventure', () => {
 router.addRoute('/team/my-team', () => {
   const pageContent = renderMyTeamPage();
   renderMainLayout('team', 'my-team', pageContent);
+  
+  // Load content after rendering
+  setTimeout(async () => {
+    // Attach screenshot upload handler
+    attachScreenshotUploadHandler();
+    
+    // Load user's saved team if exists
+    await loadUserTeam();
+  }, 100);
 });
 
 // Admin Section Routes
@@ -173,21 +182,28 @@ async function loadHeroes() {
       // Generate HTML for grouped heroes
       const heroesHTML = Object.entries(groupedHeroes).map(([heroName, skins]) => {
         const firstHero = skins[0];
-        const skinsHTML = skins.map(hero => `
+        const skinsHTML = skins.map(hero => {
+          const imageUrl = hero.imageUrl || hero.heroPicture;
+          const cacheBuster = `?t=${Date.now()}`;
+          return `
           <div style="text-align: center;">
-            ${hero.imageUrl || hero.heroPicture ? 
-              `<img src="${hero.imageUrl || hero.heroPicture}" alt="${heroName}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; display: block; margin-bottom: 8px;">` : 
-              '<div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin-bottom: 8px;">No Image</div>'
+            ${imageUrl ? 
+              `<img src="${imageUrl}${cacheBuster}" alt="${heroName}" style="width: 180px; height: 180px; object-fit: contain; border-radius: 4px; border: 2px solid #ddd; display: block; margin-bottom: 8px; background-color: #f9f9f9;">` : 
+              '<div style="width: 180px; height: 180px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin-bottom: 8px; border: 2px solid #ddd;">No Image</div>'
             }
-            <button onclick="deleteHero('${hero._id}')" style="padding: 6px 12px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">Delete</button>
+            <div style="display: flex; gap: 5px;">
+              <button onclick="editHeroImage('${hero._id}', '${imageUrl}', '${heroName}', '${hero.rarity}')" style="padding: 6px 12px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; flex: 1;">Edit</button>
+              <button onclick="deleteHero('${hero._id}')" style="padding: 6px 12px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; flex: 1;">Delete</button>
+            </div>
           </div>
-        `).join('');
+        `;
+        }).join('');
         
         return `
           <div style="background-color: #ffffff; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 15px;">
             <h3 style="color: var(--color-orange); margin-bottom: 8px; font-size: 18px;">${heroName}</h3>
             <p style="color: #000000; margin-bottom: 15px;"><strong>Rarity:</strong> ${firstHero.rarity} | <strong>Skins:</strong> ${skins.length}</p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;">
               ${skinsHTML}
             </div>
           </div>
@@ -235,12 +251,100 @@ async function deleteHero(heroId) {
   }
 }
 
+// Global function to edit hero image
+async function editHeroImage(heroId, imageUrl, heroName, rarity) {
+  // Extract original filename from URL
+  const urlParts = imageUrl.split('/');
+  const originalFilename = urlParts[urlParts.length - 1];
+  
+  // Open cropper with the hero's current image
+  imageCropper.open(imageUrl, async (croppedImageFile) => {
+    try {
+      // Show loading toast
+      if (typeof toastManager !== 'undefined') {
+        toastManager.info('Updating image...');
+      }
+      
+      // Create local preview URL for immediate display
+      const localPreviewUrl = URL.createObjectURL(croppedImageFile);
+      
+      // Immediately update the image in the UI with local preview
+      const images = document.querySelectorAll('img');
+      images.forEach(img => {
+        if (img.src.includes(originalFilename) || img.src.includes(imageUrl)) {
+          img.src = localPreviewUrl;
+          img.style.border = '3px solid #00cc66'; // Green border to show it's updated
+        }
+      });
+      
+      // Create a new File with the original filename to override it
+      const fileToUpload = new File([croppedImageFile], originalFilename, { type: croppedImageFile.type });
+      
+      // Upload the cropped image to GitHub (will override the old file)
+      const formData = new FormData();
+      formData.append('image', fileToUpload);
+      
+      const uploadResponse = await fetch('/api/upload/hero-image', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const uploadResult = await uploadResponse.json();
+      
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Failed to upload image');
+      }
+      
+      // The URL should be the same since we used the same filename
+      const updatedImageUrl = uploadResult.imageUrl;
+      
+      // Update hero with the image URL (same URL but file is overwritten)
+      const updateResponse = await fetch(`/api/heroes/${heroId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageUrl: updatedImageUrl
+        })
+      });
+      
+      const updateResult = await updateResponse.json();
+      
+      if (updateResult.success) {
+        if (typeof toastManager !== 'undefined') {
+          toastManager.success(`Hero "${heroName}" image updated! (Showing preview)`);
+        }
+        
+        // Note: GitHub CDN may take 1-5 minutes to update
+        // The local preview will show immediately
+        // After page refresh, it will load from GitHub
+      } else {
+        if (typeof toastManager !== 'undefined') {
+          toastManager.error(updateResult.error || 'Failed to update hero');
+        }
+        // Reload on error to show correct state
+        await loadHeroes();
+      }
+    } catch (error) {
+      console.error('Error updating hero image:', error);
+      if (typeof toastManager !== 'undefined') {
+        toastManager.error(error.message || 'Failed to update hero image');
+      }
+      // Reload on error
+      await loadHeroes();
+    }
+  });
+}
+
 // Default route - redirect to /home for authenticated users, /login for guests
 router.addRoute('/', () => {
   if (authManager.isAuthenticated()) {
-    router.navigate('/home', false);
+    window.history.replaceState({}, '', '/home');
+    router.renderRoute('/home');
   } else {
-    router.navigate('/login', false);
+    window.history.replaceState({}, '', '/login');
+    router.renderRoute('/login');
   }
 });
 
@@ -319,27 +423,172 @@ function setupAdminTabs() {
 }
 
 /**
- * Attach image preview handler for hero image upload
+ * Attach image preview handler for hero image upload with crop functionality
  */
 function attachImagePreviewHandler() {
   const fileInput = document.getElementById('hero-image-file');
   const preview = document.getElementById('hero-image-preview');
   const previewImg = document.getElementById('hero-preview-img');
+  const selectFromDbBtn = document.getElementById('select-from-db-btn');
+  
+  // Store the cropped file
+  let croppedFile = null;
   
   if (fileInput) {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          previewImg.src = event.target.result;
-          preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+        // Open cropper
+        imageCropper.open(file, (croppedImageFile) => {
+          // Store cropped file
+          croppedFile = croppedImageFile;
+          
+          // Update file input with cropped file
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(croppedImageFile);
+          fileInput.files = dataTransfer.files;
+          
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            previewImg.src = event.target.result;
+            preview.style.display = 'block';
+          };
+          reader.readAsDataURL(croppedImageFile);
+        });
       } else {
         preview.style.display = 'none';
+        croppedFile = null;
       }
     });
+  }
+  
+  // Handle "Select from Database" button
+  if (selectFromDbBtn) {
+    selectFromDbBtn.addEventListener('click', async () => {
+      await showDatabaseImageSelector((imageUrl) => {
+        // Open cropper with selected image URL
+        imageCropper.open(imageUrl, (croppedImageFile) => {
+          // Store cropped file
+          croppedFile = croppedImageFile;
+          
+          // Update file input with cropped file
+          const dataTransfer = new DataTransfer();
+          dataTransfer.items.add(croppedImageFile);
+          fileInput.files = dataTransfer.files;
+          
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            previewImg.src = event.target.result;
+            preview.style.display = 'block';
+          };
+          reader.readAsDataURL(croppedImageFile);
+        });
+      });
+    });
+  }
+}
+
+/**
+ * Show database image selector modal
+ */
+async function showDatabaseImageSelector(callback) {
+  try {
+    // Fetch all heroes
+    const response = await fetch('/api/heroes');
+    const result = await response.json();
+    
+    if (!result.success || result.data.length === 0) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.warning('No heroes found in database');
+      }
+      return;
+    }
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'db-image-selector-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+    `;
+    
+    // Generate image grid
+    const imagesHTML = result.data
+      .filter(hero => hero.imageUrl || hero.heroPicture)
+      .map(hero => {
+        const imageUrl = hero.imageUrl || hero.heroPicture;
+        const heroName = hero.name || hero.heroname;
+        return `
+          <div class="db-image-item" data-image-url="${imageUrl}" style="cursor: pointer; text-align: center; padding: 10px; border: 2px solid transparent; border-radius: 4px; transition: all 0.2s;">
+            <img src="${imageUrl}" alt="${heroName}" style="width: 120px; height: 120px; object-fit: contain; border-radius: 4px; background-color: #f9f9f9; border: 1px solid #ddd;">
+            <p style="color: white; margin-top: 8px; font-size: 12px;">${heroName}</p>
+          </div>
+        `;
+      }).join('');
+    
+    modal.innerHTML = `
+      <div style="background: #2a2a2a; padding: 30px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: var(--color-orange); margin: 0;">Select Hero Image from Database</h2>
+          <button id="close-db-selector" style="padding: 8px 16px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto;">
+          ${imagesHTML}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add hover effect and click handlers
+    const imageItems = modal.querySelectorAll('.db-image-item');
+    imageItems.forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        item.style.borderColor = 'var(--color-orange)';
+        item.style.backgroundColor = 'rgba(255, 102, 0, 0.1)';
+      });
+      
+      item.addEventListener('mouseleave', () => {
+        item.style.borderColor = 'transparent';
+        item.style.backgroundColor = 'transparent';
+      });
+      
+      item.addEventListener('click', () => {
+        const imageUrl = item.getAttribute('data-image-url');
+        modal.remove();
+        callback(imageUrl);
+      });
+    });
+    
+    // Close button
+    document.getElementById('close-db-selector').addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error loading database images:', error);
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Failed to load images from database');
+    }
   }
 }
 
@@ -657,5 +906,164 @@ async function deleteNews(newsId) {
     if (typeof toastManager !== 'undefined') {
       toastManager.error('Failed to delete news. Please try again.');
     }
+  }
+}
+
+
+/**
+ * Attach screenshot upload handler for team page
+ */
+function attachScreenshotUploadHandler() {
+  const form = document.getElementById('upload-screenshot-form');
+  const fileInput = document.getElementById('screenshot-file');
+  const preview = document.getElementById('screenshot-preview');
+  const previewImg = document.getElementById('screenshot-preview-img');
+  
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewImg.src = event.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        preview.style.display = 'none';
+      }
+    });
+  }
+  
+  if (!form) return;
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('upload-btn');
+    const processingStatus = document.getElementById('processing-status');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    processingStatus.style.display = 'block';
+    
+    try {
+      const file = fileInput.files[0];
+      if (!file) {
+        throw new Error('Please select a screenshot');
+      }
+      
+      // Get username from auth manager
+      const userInfo = authManager.getUserInfo();
+      const username = userInfo ? userInfo.username : 'guest';
+      
+      const formData = new FormData();
+      formData.append('screenshot', file);
+      formData.append('username', username);
+      
+      console.log('Uploading screenshot for processing...');
+      
+      const response = await fetch('/api/team/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      console.log('Processing result:', result);
+      
+      if (result.success) {
+        if (typeof toastManager !== 'undefined') {
+          toastManager.success(`Recognized ${result.data.totalHeroes} heroes!`);
+        }
+        
+        // Display results
+        displayTeamResults(result.data);
+        
+        // Reset form
+        form.reset();
+        preview.style.display = 'none';
+      } else {
+        if (typeof toastManager !== 'undefined') {
+          toastManager.error(result.error || 'Failed to process screenshot');
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading screenshot:', error);
+      if (typeof toastManager !== 'undefined') {
+        toastManager.error(error.message || 'Failed to process screenshot');
+      }
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+      processingStatus.style.display = 'none';
+    }
+  });
+}
+
+/**
+ * Display team recognition results
+ */
+function displayTeamResults(data) {
+  const resultsDiv = document.getElementById('team-results');
+  const totalHeroesEl = document.getElementById('total-heroes');
+  const recognizedHeroesEl = document.getElementById('recognized-heroes');
+  const unknownHeroesEl = document.getElementById('unknown-heroes');
+  const heroGridEl = document.getElementById('hero-grid');
+  
+  if (!resultsDiv || !heroGridEl) return;
+  
+  // Show results section
+  resultsDiv.style.display = 'block';
+  
+  // Update stats
+  totalHeroesEl.textContent = '40';
+  recognizedHeroesEl.textContent = data.totalHeroes;
+  unknownHeroesEl.textContent = data.unknownHeroes;
+  
+  // Create hero grid (4 rows × 10 columns)
+  const gridHTML = data.heroes.map(hero => {
+    const isUnknown = hero.heroName === 'Unknown';
+    const bgColor = isUnknown ? '#ffcccc' : '#ccffcc';
+    const textColor = isUnknown ? '#cc0000' : '#006600';
+    const similarityPercent = Math.round(hero.similarity * 100);
+    
+    return `
+      <div style="background-color: ${bgColor}; padding: 8px; border: 1px solid var(--color-orange); border-radius: 4px; text-align: center;">
+        <p style="color: ${textColor}; font-size: 11px; font-weight: 600; margin-bottom: 4px;">${hero.heroName}</p>
+        ${hero.rarity ? `<p style="color: #666; font-size: 10px; margin-bottom: 4px;">${hero.rarity}</p>` : ''}
+        <p style="color: #999; font-size: 9px;">${similarityPercent}%</p>
+      </div>
+    `;
+  }).join('');
+  
+  heroGridEl.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px;">
+      ${gridHTML}
+    </div>
+  `;
+  
+  // Scroll to results
+  resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * Load user's saved team
+ */
+async function loadUserTeam() {
+  const userInfo = authManager.getUserInfo();
+  const username = userInfo ? userInfo.username : null;
+  
+  if (!username) return;
+  
+  try {
+    const response = await fetch(`/api/team/${username}`);
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      displayTeamResults(result.data);
+    }
+  } catch (error) {
+    console.log('No saved team found');
   }
 }

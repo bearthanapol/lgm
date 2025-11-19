@@ -10,6 +10,8 @@ const guildRoutes = require('./server/guildRoutes');
 const guildWarRoutes = require('./server/guildWarRoutes');
 const newsRoutes = require('./server/newsRoutes');
 const uploadRoutes = require('./server/uploadRoutes');
+const teamRoutes = require('./server/teamRoutes');
+const debugImageRoutes = require('./server/debugImageRoutes');
 const { connectToDatabase, closeDatabaseConnection } = require('./server/database');
 
 const app = express();
@@ -36,6 +38,8 @@ app.use('/api/guilds', guildRoutes);
 app.use('/api/guildwar', guildWarRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/debug', debugImageRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

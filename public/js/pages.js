@@ -234,8 +234,11 @@ function renderAdminPage() {
               
               <div style="margin-top: 20px;">
                 <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Hero Image</label>
-                <input type="file" id="hero-image-file" accept="image/*" required style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
-                <small style="color: #666666; display: block; margin-top: 4px;">Upload an image (max 5MB). It will be automatically uploaded to GitHub.</small>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                  <input type="file" id="hero-image-file" accept="image/*" style="flex: 1; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
+                  <button type="button" id="select-from-db-btn" style="padding: 12px 20px; background-color: #0066cc; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;">Select from Database</button>
+                </div>
+                <small style="color: #666666; display: block; margin-top: 4px;">Upload a new image or select from existing heroes. Image cropper will open automatically.</small>
                 <div id="hero-image-preview" style="margin-top: 10px; display: none;">
                   <img id="hero-preview-img" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 2px solid var(--color-orange); border-radius: 4px;">
                 </div>
@@ -316,45 +319,55 @@ function renderMyTeamPage() {
   return `
     <div class="page-content">
       <h1>My Team</h1>
-      <p>Organize and manage your team composition here.</p>
+      <p>Upload your hero screenshot to automatically detect and save your team.</p>
       
       <div style="margin-top: 30px;">
-        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Team Formation</h2>
-        <div style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px;">
-          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px;">
-            <div style="background-color: #ffffff; padding: 15px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-              <p style="color: #666666;">Slot 1</p>
+        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Upload Screenshot</h2>
+        <div style="background-color: #f5f5f5; padding: 30px; border: 2px solid var(--color-orange); border-radius: 4px;">
+          <form id="upload-screenshot-form">
+            <div style="margin-bottom: 20px;">
+              <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Hero Screenshot (4 rows × 10 columns)</label>
+              <input type="file" id="screenshot-file" accept="image/*" required style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
+              <small style="color: #666666; display: block; margin-top: 4px;">Upload a screenshot showing your 40 heroes in a 4×10 grid</small>
             </div>
-            <div style="background-color: #ffffff; padding: 15px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-              <p style="color: #666666;">Slot 2</p>
+            
+            <div id="screenshot-preview" style="margin-top: 15px; display: none;">
+              <img id="screenshot-preview-img" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border: 2px solid var(--color-orange); border-radius: 4px;">
             </div>
-            <div style="background-color: #ffffff; padding: 15px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-              <p style="color: #666666;">Slot 3</p>
+            
+            <button type="submit" id="upload-btn" style="margin-top: 20px; padding: 12px 30px; background-color: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">
+              Process Screenshot
+            </button>
+          </form>
+          
+          <div id="processing-status" style="margin-top: 20px; display: none;">
+            <p style="color: var(--color-orange); font-weight: 600;">⏳ Processing screenshot... This may take a minute.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div id="team-results" style="margin-top: 30px; display: none;">
+        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Recognition Results</h2>
+        <div style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 20px;">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+            <div style="text-align: center;">
+              <p style="color: #666666; font-size: 14px; margin-bottom: 5px;">Total Heroes</p>
+              <p id="total-heroes" style="color: var(--color-orange); font-size: 32px; font-weight: bold;">0</p>
             </div>
-            <div style="background-color: #ffffff; padding: 15px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-              <p style="color: #666666;">Slot 4</p>
+            <div style="text-align: center;">
+              <p style="color: #666666; font-size: 14px; margin-bottom: 5px;">Recognized</p>
+              <p id="recognized-heroes" style="color: #00cc66; font-size: 32px; font-weight: bold;">0</p>
             </div>
-            <div style="background-color: #ffffff; padding: 15px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-              <p style="color: #666666;">Slot 5</p>
+            <div style="text-align: center;">
+              <p style="color: #666666; font-size: 14px; margin-bottom: 5px;">Unknown</p>
+              <p id="unknown-heroes" style="color: #ff3333; font-size: 32px; font-weight: bold;">0</p>
             </div>
           </div>
-          <p style="text-align: center; color: #666666;">Team formation features coming soon...</p>
         </div>
-      </div>
-      
-      <div style="margin-top: 30px;">
-        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Team Stats</h2>
-        <div style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px;">
-          <p style="margin-bottom: 10px; color: #000000;"><strong>Total Power:</strong> Coming soon...</p>
-          <p style="margin-bottom: 10px; color: #000000;"><strong>Team Level:</strong> Coming soon...</p>
-          <p style="margin-bottom: 10px; color: #000000;"><strong>Synergy Bonus:</strong> Coming soon...</p>
-        </div>
-      </div>
-      
-      <div style="margin-top: 30px;">
-        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Saved Teams</h2>
-        <div style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px;">
-          <p style="color: #000000;">Your saved team compositions will be displayed here.</p>
+        
+        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Your Heroes (4 rows × 10 columns)</h2>
+        <div id="hero-grid" style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px;">
+          <p style="color: #666666;">Upload a screenshot to see your heroes here.</p>
         </div>
       </div>
     </div>
