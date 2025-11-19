@@ -319,55 +319,16 @@ function renderMyTeamPage() {
   return `
     <div class="page-content">
       <h1>My Team</h1>
-      <p>Upload your hero screenshot to automatically detect and save your team.</p>
+      <p>Manage your hero collection with our advanced recognition tool.</p>
       
-      <div style="margin-top: 30px;">
-        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Upload Screenshot</h2>
-        <div style="background-color: #f5f5f5; padding: 30px; border: 2px solid var(--color-orange); border-radius: 4px;">
-          <form id="upload-screenshot-form">
-            <div style="margin-bottom: 20px;">
-              <label style="display: block; margin-bottom: 8px; color: #000000; font-weight: 500;">Hero Screenshot (4 rows × 10 columns)</label>
-              <input type="file" id="screenshot-file" accept="image/*" required style="width: 100%; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; font-size: 14px;">
-              <small style="color: #666666; display: block; margin-top: 4px;">Upload a screenshot showing your 40 heroes in a 4×10 grid</small>
-            </div>
-            
-            <div id="screenshot-preview" style="margin-top: 15px; display: none;">
-              <img id="screenshot-preview-img" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border: 2px solid var(--color-orange); border-radius: 4px;">
-            </div>
-            
-            <button type="submit" id="upload-btn" style="margin-top: 20px; padding: 12px 30px; background-color: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">
-              Process Screenshot
-            </button>
-          </form>
-          
-          <div id="processing-status" style="margin-top: 20px; display: none;">
-            <p style="color: var(--color-orange); font-weight: 600;">⏳ Processing screenshot... This may take a minute.</p>
-          </div>
-        </div>
-      </div>
-      
-      <div id="team-results" style="margin-top: 30px; display: none;">
-        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Recognition Results</h2>
-        <div style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 20px;">
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-            <div style="text-align: center;">
-              <p style="color: #666666; font-size: 14px; margin-bottom: 5px;">Total Heroes</p>
-              <p id="total-heroes" style="color: var(--color-orange); font-size: 32px; font-weight: bold;">0</p>
-            </div>
-            <div style="text-align: center;">
-              <p style="color: #666666; font-size: 14px; margin-bottom: 5px;">Recognized</p>
-              <p id="recognized-heroes" style="color: #00cc66; font-size: 32px; font-weight: bold;">0</p>
-            </div>
-            <div style="text-align: center;">
-              <p style="color: #666666; font-size: 14px; margin-bottom: 5px;">Unknown</p>
-              <p id="unknown-heroes" style="color: #ff3333; font-size: 32px; font-weight: bold;">0</p>
-            </div>
-          </div>
-        </div>
-        
-        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Your Heroes (4 rows × 10 columns)</h2>
-        <div id="hero-grid" style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px;">
-          <p style="color: #666666;">Upload a screenshot to see your heroes here.</p>
+      <div style="margin-top: 20px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
+        <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎮 Hero Recognition Tool</h2>
+        <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
+        <button onclick="window.location.href='/test-grid-detection.html'" style="display: inline-block; padding: 15px 40px; background: white; color: #667eea; border: none; border-radius: 6px; font-size: 18px; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'">
+          🚀 Open Hero Recognition Tool
+        </button>
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3);">
+          <p style="margin: 0; font-size: 14px; opacity: 0.8;">✨ Features: OCR Recognition • Manual Entry • Inline Editing • Star Levels • Batch Processing</p>
         </div>
       </div>
     </div>

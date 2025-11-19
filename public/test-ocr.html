@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test OCR Hero Recognition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6600;
+        }
+        .upload-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #ff6600;
+            border-radius: 8px;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        button {
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff8833;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .method-selector {
+            margin: 20px 0;
+        }
+        .method-selector label {
+            margin-right: 20px;
+            font-weight: bold;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        #status.info {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+        #status.success {
+            background-color: #e8f5e9;
+            color: #388e3c;
+            display: block;
+        }
+        #status.error {
+            background-color: #ffebee;
+            color: #d32f2f;
+            display: block;
+        }
+        #results {
+            margin-top: 30px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            flex: 1;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .stat-box h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .stat-box .number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff6600;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .hero-cell {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .hero-cell.recognized {
+            background-color: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .hero-cell.unknown {
+            background-color: #ffebee;
+            border-color: #f44336;
+        }
+        .hero-cell .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .hero-cell .ocr-text {
+            font-size: 10px;
+            color: #666;
+            font-style: italic;
+        }
+        .hero-cell .position {
+            font-size: 10px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test OCR Hero Recognition</h1>
+        <p>Upload a hero grid screenshot to test the new OCR-based recognition system.</p>
+        
+        <div class="method-selector">
+            <label>Recognition Method:</label>
+            <label>
+                <input type="radio" name="method" value="ocr" checked> OCR (New - Recommended)
+            </label>
+            <label>
+                <input type="radio" name="method" value="pixel"> Pixel Matching (Old)
+            </label>
+        </div>
+        
+        <div class="upload-section">
+            <h3>Upload Screenshot</h3>
+            <input type="file" id="fileInput" accept="image/*">
+            <br>
+            <button id="uploadBtn" onclick="uploadScreenshot()">Recognize Heroes</button>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div id="results" style="display: none;">
+            <h2>Recognition Results</h2>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <h3>Total Heroes</h3>
+                    <div class="number" id="totalHeroes">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Recognized</h3>
+                    <div class="number" id="recognizedHeroes" style="color: #4caf50;">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Unknown</h3>
+                    <div class="number" id="unknownHeroes" style="color: #f44336;">0</div>
+                </div>
+                <div class="stat-box">
+                    <h3>Accuracy</h3>
+                    <div class="number" id="accuracy">0%</div>
+                </div>
+            </div>
+            
+            <h3>Hero Grid (4x10)</h3>
+            <div class="hero-grid" id="heroGrid"></div>
+        </div>
+    </div>
+    
+    <script>
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = type;
+        }
+        
+        async function uploadScreenshot() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showStatus('Please select a screenshot first', 'error');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const method = document.querySelector('input[name="method"]:checked').value;
+            const useOCR = method === 'ocr';
+            
+            showStatus(`Processing with ${useOCR ? 'OCR' : 'Pixel Matching'}...`, 'info');
+            uploadBtn.disabled = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('screenshot', file);
+                formData.append('username', 'test-user');
+                formData.append('useOCR', useOCR);
+                
+                const response = await fetch('/api/team/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Recognition complete!', 'success');
+                    displayResults(result.data);
+                } else {
+                    showStatus('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('Error: ' + error.message, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            
+            // Update stats
+            document.getElementById('totalHeroes').textContent = '40';
+            document.getElementById('recognizedHeroes').textContent = data.totalHeroes;
+            document.getElementById('unknownHeroes').textContent = data.unknownHeroes;
+            
+            const accuracy = Math.round((data.totalHeroes / 40) * 100);
+            document.getElementById('accuracy').textContent = accuracy + '%';
+            
+            // Display hero grid
+            const heroGrid = document.getElementById('heroGrid');
+            heroGrid.innerHTML = '';
+            
+            data.heroes.forEach(hero => {
+                const cell = document.createElement('div');
+                cell.className = 'hero-cell ' + (hero.heroName === 'Unknown' ? 'unknown' : 'recognized');
+                
+                cell.innerHTML = `
+                    <div class="position">Cell ${hero.position}</div>
+                    <div class="name">${hero.heroName}</div>
+                    ${hero.rarity ? `<div style="font-size: 10px; color: #666;">${hero.rarity}</div>` : ''}
+                    ${hero.ocrText ? `<div class="ocr-text">OCR: "${hero.ocrText}"</div>` : ''}
+                    ${hero.similarity ? `<div style="font-size: 10px; color: #666;">${Math.round(hero.similarity * 100)}%</div>` : ''}
+                `;
+                
+                heroGrid.appendChild(cell);
+            });
+            
+            // Scroll to results
+            resultsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

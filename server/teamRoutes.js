@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const router = express.Router();
 const { processScreenshotAndMatch } = require('./imageMatching');
+const { processScreenshotWithOCR } = require('./heroRecognitionOCR');
 const { getAllHeroes } = require('./heroModel');
 const { saveUserTeam, getUserTeam, getHeroStatistics } = require('./userTeamModel');
 
@@ -53,12 +54,27 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
       });
     }
 
-    // Process screenshot and match heroes
-    const matchedHeroes = await processScreenshotAndMatch(
-      req.file.buffer,
-      heroDatabase,
-      0.90 // Minimum similarity threshold (90%)
-    );
+    // Check if user wants to use OCR method (default: true)
+    const useOCR = req.body.useOCR !== 'false'; // Default to OCR method
+    
+    let matchedHeroes;
+    
+    if (useOCR) {
+      console.log('Using OCR-based recognition...');
+      // Process screenshot with OCR (new method)
+      matchedHeroes = await processScreenshotWithOCR(
+        req.file.buffer,
+        heroDatabase
+      );
+    } else {
+      console.log('Using pixel-matching recognition...');
+      // Process screenshot with pixel matching (old method)
+      matchedHeroes = await processScreenshotAndMatch(
+        req.file.buffer,
+        heroDatabase,
+        0.90 // Minimum similarity threshold (90%)
+      );
+    }
 
     // Save to user's team
     const savedTeam = await saveUserTeam(username, matchedHeroes);

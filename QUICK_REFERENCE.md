@@ -47,8 +47,14 @@ GITHUB_TOKEN=your-github-token-here
 - **Square Crop**: Button for 1:1 ratio
 - **Reset**: Button to reset to full image
 
-### 3. Team Recognition
-**Upload screenshot** → System recognizes heroes → Shows results
+### 3. Team Recognition (NEW: OCR-Based)
+**Upload screenshot** → Adaptive grid detection → OCR name extraction → Match with database → Shows results
+
+**Two Methods Available:**
+- **OCR Method** (New, Recommended): Reads hero names using OCR - works on any resolution
+- **Pixel Matching** (Old): Compares images pixel-by-pixel - resolution dependent
+
+**Test Page**: http://localhost:3000/test-ocr.html
 
 ### 4. Home Page
 Displays published news and updates

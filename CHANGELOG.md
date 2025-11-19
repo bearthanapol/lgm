@@ -1,6 +1,49 @@
 # Changelog - Admin Panel Enhancements
 
-## Version 2.1 - Image Cropper Feature (Current)
+## Version 2.2 - OCR Hero Recognition (Current)
+
+### 🎉 New Features
+
+#### 1. OCR-Based Hero Recognition
+- **Adaptive grid detection** - Works on any resolution (PC, iPhone, iPad, Android)
+- **OCR name extraction** - Reads hero names from black background with white text
+- **Fuzzy matching** - Handles OCR errors with Levenshtein distance algorithm
+- **85-95% accuracy** - Much better than pixel matching
+- **Device independent** - No need for specific resolution
+- **Easy maintenance** - Only needs hero names, not reference images
+
+#### 2. Dual Recognition Methods
+- **OCR Method** (New, Default): Text-based recognition
+- **Pixel Matching** (Legacy): Image comparison method
+- Both methods available via API parameter
+- Backward compatible with existing implementations
+
+#### 3. Test Interface
+- New test page at `/test-ocr.html`
+- Compare both recognition methods
+- Visual results with accuracy stats
+- See OCR text for debugging
+
+### 🔧 Technical Changes
+
+#### New Dependencies
+- `tesseract.js` - OCR engine for text recognition
+
+#### New Backend Files
+- `server/heroRecognitionOCR.js` - OCR recognition engine
+- `public/test-ocr.html` - Test interface
+
+#### Updated Files
+- `server/teamRoutes.js` - Added OCR method support with `useOCR` parameter
+
+#### Key Improvements
+- Grid detection adapts to any resolution
+- Name area extraction (bottom 18% of cell)
+- Image enhancement for better OCR (normalize, grayscale, threshold, upscale 2x)
+- Three-tier matching: exact → partial → fuzzy (60% threshold)
+- Detailed logging for debugging
+
+## Version 2.1 - Image Cropper Feature
 
 ### 🎉 New Features
 

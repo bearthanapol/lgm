@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Detection Visualizer</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ff6600;
+        }
+        .upload-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px dashed #ff6600;
+            border-radius: 8px;
+            text-align: center;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        button {
+            background-color: #ff6600;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff8833;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        #status.info {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            display: block;
+        }
+        #status.success {
+            background-color: #e8f5e9;
+            color: #388e3c;
+            display: block;
+        }
+        #status.error {
+            background-color: #ffebee;
+            color: #d32f2f;
+            display: block;
+        }
+        .grid-info {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .grid-info h3 {
+            margin-top: 0;
+            color: #ff6600;
+        }
+        .info-row {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        .info-item {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .info-item label {
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+        }
+        .info-item .value {
+            font-size: 20px;
+            color: #ff6600;
+            font-weight: bold;
+        }
+        #canvas-container {
+            margin: 20px 0;
+            text-align: center;
+            overflow: auto;
+            border: 2px solid #ff6600;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        canvas {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .controls label {
+            font-weight: bold;
+        }
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .legend-color {
+            width: 30px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        .ocr-cell {
+            padding: 10px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+        }
+        .ocr-cell.success {
+            border-color: #4caf50;
+            background: #e8f5e9;
+        }
+        .ocr-cell.empty {
+            border-color: #f44336;
+            background: #ffebee;
+        }
+        .ocr-cell .ocr-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ff6600;
+            margin: 8px 0;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        .ocr-cell .ocr-text:hover {
+            background: rgba(255, 102, 0, 0.1);
+        }
+        .ocr-cell .ocr-text.editing {
+            background: #fff;
+            border: 2px solid #ff6600;
+            outline: none;
+        }
+        .ocr-text-input {
+            font-size: 14px;
+            font-weight: bold;
+            color: #ff6600;
+            border: 2px solid #ff6600;
+            border-radius: 3px;
+            padding: 4px 8px;
+            text-align: center;
+            width: 90%;
+            outline: none;
+        }
+        .star-rating {
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 2px;
+        }
+        .star {
+            font-size: 10px;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+        .star:hover {
+            transform: scale(1.2);
+        }
+        .star.yellow {
+            color: #ffd700;
+            text-shadow: 0 0 4px rgba(255,215,0,0.5);
+        }
+        .star.blue {
+            color: #0066ff;
+            text-shadow: 0 0 4px rgba(0,102,255,0.5);
+        }
+        .star.red {
+            color: #ff0000;
+            text-shadow: 0 0 4px rgba(255,0,0,0.5);
+        }
+        #ocr-progress {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #ff6600;
+            transition: width 0.3s;
+        }
+        .manual-star {
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-shadow: 0 0 2px rgba(0,0,0,0.3);
+        }
+        .manual-star:hover {
+            transform: scale(1.1);
+        }
+        .manual-star.yellow {
+            color: #ffd700;
+            text-shadow: 0 0 4px rgba(255,215,0,0.5);
+        }
+        .manual-star.blue {
+            color: #0066ff;
+            text-shadow: 0 0 4px rgba(0,102,255,0.5);
+        }
+        .manual-star.red {
+            color: #ff0000;
+            text-shadow: 0 0 4px rgba(255,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Hero Team Recognition</h1>
+        <p>Upload your hero grid screenshot and select the grid area to recognize all 40 heroes.</p>
+        
+        <div class="upload-section">
+            <h3>Upload Screenshot</h3>
+            <input type="file" id="fileInput" accept="image/*" onchange="loadImage()">
+            <br>
+            <p style="color: #666; font-size: 14px;">After uploading, drag on the image to select the grid area</p>
+        </div>
+        
+        <div id="crop-section" style="display: none;">
+            <h3>Select Your Hero Grid</h3>
+            <p style="color: #666;">Click and drag to select the 4×10 hero grid area from your screenshot</p>
+            <div style="border: 2px solid #ff6600; border-radius: 4px; display: inline-block; margin: 20px 0;">
+                <canvas id="cropCanvas" style="cursor: crosshair; display: block;"></canvas>
+            </div>
+            <br>
+            <button onclick="applyCrop()">✓ Confirm Selection</button>
+            <button onclick="resetCrop()" style="background: #666;">↺ Reset</button>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div id="preview-section" style="display: none;">
+            <h3>Verify Name Areas</h3>
+            <p style="color: #666;">Check if the green highlighted areas cover the hero names correctly</p>
+            
+            <div style="border: 2px solid #ff6600; border-radius: 4px; display: inline-block; margin: 20px 0; background: #f9f9f9;">
+                <canvas id="previewCanvas" style="display: block; max-width: 100%;"></canvas>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <button onclick="testOCR()" style="font-size: 18px; padding: 15px 30px; background: #00cc66;">✓ Looks Good - Recognize Heroes</button>
+                <button onclick="backToSelection()" style="font-size: 16px; padding: 12px 24px; background: #666; margin-left: 10px;">← Back to Selection</button>
+            </div>
+        </div>
+        
+        <div id="results" style="display: none;">
+            <div id="ocr-progress" style="display: none;">
+                <p><strong>Processing OCR...</strong> <span id="ocr-status">Initializing...</span></p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div id="ocr-results" style="display: none; margin: 20px 0; padding: 20px; background: #f5f5f5; border-radius: 4px;">
+                <h3 style="color: #ff6600;">OCR Results (<span id="ocr-count">0</span> unique heroes detected)</h3>
+                <div id="ocr-grid" style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; margin-top: 15px;"></div>
+                <div style="margin-top: 20px; text-align: center;">
+                    <button onclick="addMore()" style="font-size: 16px; padding: 12px 24px; background: #0066cc;">➕ Add More Heroes</button>
+                    <button onclick="showManualEntry()" style="font-size: 16px; padding: 12px 24px; background: #9c27b0; margin-left: 10px;">✍️ Add Hero Manually</button>
+                    <button onclick="saveToDatabase()" style="font-size: 16px; padding: 12px 24px; background: #00cc66; margin-left: 10px;">💾 Save to Database</button>
+                </div>
+                
+                <!-- Save Result Display -->
+                <div id="save-result" style="display: none; margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 4px; border: 2px solid #00cc66;">
+                    <h3 style="color: #00cc66; margin-top: 0;">📊 Save Result (Test Mode)</h3>
+                    <p style="color: #666; font-size: 14px;">This is what would be saved to the database:</p>
+                    <pre id="save-data" style="background: #fff; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 12px; border: 1px solid #ddd;"></pre>
+                </div>
+                
+                <!-- Manual Entry Modal -->
+                <div id="manual-entry-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                    <div style="background: white; padding: 30px; border-radius: 8px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <h3 style="color: #ff6600; margin-top: 0;">Add Hero Manually</h3>
+                        <div style="margin: 20px 0;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Hero Name:</label>
+                            <input type="text" id="manual-hero-name" placeholder="Enter hero name" style="width: 100%; padding: 10px; font-size: 16px; border: 2px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </div>
+                        <div style="margin: 20px 0;">
+                            <label style="display: block; font-weight: bold; margin-bottom: 8px;">Star Level (0-12):</label>
+                            <input type="number" id="manual-star-level" min="0" max="12" value="0" oninput="updateManualStarDisplay()" style="width: 100%; padding: 10px; font-size: 18px; border: 2px solid #ddd; border-radius: 4px; box-sizing: border-box; text-align: center;">
+                            <p style="font-size: 12px; color: #666; margin-top: 5px;">0=6🟡 | 1-6=🔵+🟡 | 7-12=🔴+🔵</p>
+                            <div id="manual-star-display" style="display: flex; justify-content: center; gap: 6px; font-size: 32px; margin-top: 15px;">
+                                <span class="manual-star yellow">★</span>
+                                <span class="manual-star yellow">★</span>
+                                <span class="manual-star yellow">★</span>
+                                <span class="manual-star yellow">★</span>
+                                <span class="manual-star yellow">★</span>
+                                <span class="manual-star yellow">★</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 30px; text-align: center;">
+                            <button onclick="addManualHero()" style="font-size: 16px; padding: 12px 30px; background: #00cc66; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">✓ Add Hero</button>
+                            <button onclick="closeManualEntry()" style="font-size: 16px; padding: 12px 30px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="canvas-container" style="display: none;">
+                <canvas id="gridCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let imageData = null;
+        let originalImageData = null; // Store original image
+        let gridInfo = null;
+        let cropCanvas = null;
+        let cropCtx = null;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let cropArea = { x: 0, y: 0, width: 0, height: 0 };
+        let scale = 1;
+        let allOCRResults = []; // Store all OCR results across multiple uploads
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = type;
+        }
+        
+        function loadImage() {
+            const fileInput = document.getElementById('fileInput');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            showStatus('Loading image...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    imageData = img;
+                    originalImageData = img; // Store original
+                    setupCropCanvas(img);
+                    showStatus('Drag on the image to select the grid area', 'info');
+                };
+                img.onerror = function() {
+                    showStatus('Failed to load image', 'error');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function setupCropCanvas(img) {
+            document.getElementById('crop-section').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            cropCanvas = document.getElementById('cropCanvas');
+            cropCtx = cropCanvas.getContext('2d');
+            
+            // Scale image to fit screen (max 1000px width)
+            const maxWidth = 1000;
+            if (img.width > maxWidth) {
+                scale = maxWidth / img.width;
+                cropCanvas.width = maxWidth;
+                cropCanvas.height = img.height * scale;
+            } else {
+                scale = 1;
+                cropCanvas.width = img.width;
+                cropCanvas.height = img.height;
+            }
+            
+            // Draw image
+            cropCtx.drawImage(img, 0, 0, cropCanvas.width, cropCanvas.height);
+            
+            // Initialize crop area to full image
+            cropArea = {
+                x: 0,
+                y: 0,
+                width: cropCanvas.width,
+                height: cropCanvas.height
+            };
+            
+            // Add event listeners
+            cropCanvas.addEventListener('mousedown', onCropMouseDown);
+            cropCanvas.addEventListener('mousemove', onCropMouseMove);
+            cropCanvas.addEventListener('mouseup', onCropMouseUp);
+            cropCanvas.addEventListener('mouseleave', onCropMouseUp);
+            
+            drawCropOverlay();
+        }
+        
+        function onCropMouseDown(e) {
+            const rect = cropCanvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            isDragging = true;
+            cropArea = { x: startX, y: startY, width: 0, height: 0 };
+        }
+        
+        function onCropMouseMove(e) {
+            if (!isDragging) return;
+            
+            const rect = cropCanvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            cropArea.width = currentX - startX;
+            cropArea.height = currentY - startY;
+            
+            // Handle negative dimensions
+            if (cropArea.width < 0) {
+                cropArea.x = currentX;
+                cropArea.width = Math.abs(cropArea.width);
+            } else {
+                cropArea.x = startX;
+            }
+            
+            if (cropArea.height < 0) {
+                cropArea.y = currentY;
+                cropArea.height = Math.abs(cropArea.height);
+            } else {
+                cropArea.y = startY;
+            }
+            
+            drawCropOverlay();
+        }
+        
+        function onCropMouseUp() {
+            isDragging = false;
+        }
+        
+        function drawCropOverlay() {
+            // Redraw image
+            cropCtx.clearRect(0, 0, cropCanvas.width, cropCanvas.height);
+            cropCtx.drawImage(imageData, 0, 0, cropCanvas.width, cropCanvas.height);
+            
+            // Draw dark overlay
+            cropCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            cropCtx.fillRect(0, 0, cropCanvas.width, cropCanvas.height);
+            
+            // Clear crop area
+            cropCtx.clearRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
+            
+            // Redraw image in crop area
+            const sx = cropArea.x / scale;
+            const sy = cropArea.y / scale;
+            const sw = cropArea.width / scale;
+            const sh = cropArea.height / scale;
+            
+            cropCtx.drawImage(
+                imageData,
+                sx, sy, sw, sh,
+                cropArea.x, cropArea.y, cropArea.width, cropArea.height
+            );
+            
+            // Draw crop border
+            cropCtx.strokeStyle = '#ff6600';
+            cropCtx.lineWidth = 3;
+            cropCtx.strokeRect(cropArea.x, cropArea.y, cropArea.width, cropArea.height);
+            
+            // Draw corner handles
+            const handleSize = 12;
+            cropCtx.fillStyle = '#ff6600';
+            cropCtx.fillRect(cropArea.x - handleSize/2, cropArea.y - handleSize/2, handleSize, handleSize);
+            cropCtx.fillRect(cropArea.x + cropArea.width - handleSize/2, cropArea.y - handleSize/2, handleSize, handleSize);
+            cropCtx.fillRect(cropArea.x - handleSize/2, cropArea.y + cropArea.height - handleSize/2, handleSize, handleSize);
+            cropCtx.fillRect(cropArea.x + cropArea.width - handleSize/2, cropArea.y + cropArea.height - handleSize/2, handleSize, handleSize);
+        }
+        
+        function resetCrop() {
+            cropArea = {
+                x: 0,
+                y: 0,
+                width: cropCanvas.width,
+                height: cropCanvas.height
+            };
+            drawCropOverlay();
+        }
+        
+        function applyCrop() {
+            if (cropArea.width < 50 || cropArea.height < 50) {
+                showStatus('Please select a larger area', 'error');
+                return;
+            }
+            
+            // Convert crop area back to original image coordinates
+            const actualX = cropArea.x / scale;
+            const actualY = cropArea.y / scale;
+            const actualWidth = cropArea.width / scale;
+            const actualHeight = cropArea.height / scale;
+            
+            // Create cropped image
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = actualWidth;
+            croppedCanvas.height = actualHeight;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            
+            croppedCtx.drawImage(
+                imageData,
+                actualX, actualY, actualWidth, actualHeight,
+                0, 0, actualWidth, actualHeight
+            );
+            
+            // Convert to image
+            const croppedImg = new Image();
+            croppedImg.onload = function() {
+                imageData = croppedImg;
+                document.getElementById('crop-section').style.display = 'none';
+                detectGrid(croppedImg);
+            };
+            croppedImg.src = croppedCanvas.toDataURL();
+        }
+        
+
+        
+        function detectGrid(img) {
+            const width = img.width;
+            const height = img.height;
+            
+            // Calculate grid (4 rows x 10 columns)
+            const rows = 4;
+            const cols = 10;
+            const cellWidth = Math.floor(width / cols);
+            const cellHeight = Math.floor(height / rows);
+            
+            gridInfo = {
+                width,
+                height,
+                rows,
+                cols,
+                cellWidth,
+                cellHeight
+            };
+            
+            // Show preview with name areas highlighted
+            showPreview();
+            
+            showStatus('Verify that green areas cover hero names. If not, go back and adjust.', 'info');
+        }
+        
+        function showPreview() {
+            document.getElementById('preview-section').style.display = 'block';
+            
+            const canvas = document.getElementById('previewCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size (scale down if too large)
+            const maxWidth = 1000;
+            let scale = 1;
+            if (gridInfo.width > maxWidth) {
+                scale = maxWidth / gridInfo.width;
+            }
+            
+            canvas.width = gridInfo.width * scale;
+            canvas.height = gridInfo.height * scale;
+            
+            // Draw image
+            ctx.drawImage(imageData, 0, 0, canvas.width, canvas.height);
+            
+            // Draw name areas (green highlights)
+            for (let row = 0; row < gridInfo.rows; row++) {
+                for (let col = 0; col < gridInfo.cols; col++) {
+                    const x = col * gridInfo.cellWidth * scale;
+                    const y = row * gridInfo.cellHeight * scale;
+                    const nameHeight = Math.floor(gridInfo.cellHeight * 0.18) * scale;
+                    const nameY = y + (gridInfo.cellHeight * scale) - nameHeight;
+                    
+                    // Draw semi-transparent green overlay
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+                    ctx.fillRect(x, nameY, gridInfo.cellWidth * scale, nameHeight);
+                    
+                    // Draw green border
+                    ctx.strokeStyle = '#00ff00';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, nameY, gridInfo.cellWidth * scale, nameHeight);
+                }
+            }
+            
+            // Scroll to preview
+            document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function backToSelection() {
+            // Restore original image
+            imageData = originalImageData;
+            
+            // Reset and redraw crop canvas with original image
+            setupCropCanvas(originalImageData);
+            
+            // Hide preview, show crop section
+            document.getElementById('preview-section').style.display = 'none';
+            document.getElementById('crop-section').style.display = 'block';
+            showStatus('Adjust your selection and click "Confirm Selection" again', 'info');
+            
+            // Scroll back to crop section
+            document.getElementById('crop-section').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        async function testOCR() {
+            if (!gridInfo || !imageData) {
+                showStatus('Please detect grid first', 'error');
+                return;
+            }
+            
+            // Hide preview, show results section
+            document.getElementById('preview-section').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('ocr-progress').style.display = 'block';
+            document.getElementById('ocr-results').style.display = 'none';
+            document.getElementById('ocr-status').textContent = 'Extracting name areas...';
+            document.getElementById('progress-fill').style.width = '0%';
+            
+            const ocrResults = [];
+            const totalCells = 40;
+            
+            try {
+                // Process each cell
+                for (let row = 0; row < gridInfo.rows; row++) {
+                    for (let col = 0; col < gridInfo.cols; col++) {
+                        const cellNum = row * gridInfo.cols + col + 1;
+                        const progress = (cellNum / totalCells) * 100;
+                        
+                        document.getElementById('ocr-status').textContent = `Processing cell ${cellNum}/40...`;
+                        document.getElementById('progress-fill').style.width = progress + '%';
+                        
+                        // Extract name area from cell
+                        const x = col * gridInfo.cellWidth;
+                        const y = row * gridInfo.cellHeight;
+                        const nameHeight = Math.floor(gridInfo.cellHeight * 0.18);
+                        const nameY = y + gridInfo.cellHeight - nameHeight;
+                        
+                        // Create canvas for name area
+                        const nameCanvas = document.createElement('canvas');
+                        nameCanvas.width = gridInfo.cellWidth;
+                        nameCanvas.height = nameHeight;
+                        const nameCtx = nameCanvas.getContext('2d');
+                        
+                        // Draw name area
+                        nameCtx.drawImage(
+                            imageData,
+                            x, nameY, gridInfo.cellWidth, nameHeight,
+                            0, 0, gridInfo.cellWidth, nameHeight
+                        );
+                        
+                        // Enhance for OCR
+                        const imageData2 = nameCtx.getImageData(0, 0, nameCanvas.width, nameCanvas.height);
+                        const data = imageData2.data;
+                        
+                        // Simple threshold to black & white
+                        for (let i = 0; i < data.length; i += 4) {
+                            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                            const val = avg > 128 ? 255 : 0;
+                            data[i] = data[i + 1] = data[i + 2] = val;
+                        }
+                        nameCtx.putImageData(imageData2, 0, 0);
+                        
+                        // Perform OCR
+                        try {
+                            const { data: { text, confidence } } = await Tesseract.recognize(
+                                nameCanvas,
+                                'eng',
+                                {
+                                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ',
+                                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
+                                }
+                            );
+                            
+                            const cleanText = text.trim().replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ');
+                            
+                            ocrResults.push({
+                                cellNum,
+                                text: cleanText,
+                                confidence: Math.round(confidence)
+                            });
+                        } catch (error) {
+                            console.error(`OCR error for cell ${cellNum}:`, error);
+                            ocrResults.push({
+                                cellNum,
+                                text: '',
+                                confidence: 0
+                            });
+                        }
+                    }
+                }
+                
+                // Merge with existing results (avoid duplicates)
+                mergeOCRResults(ocrResults);
+                
+                // Display all results
+                displayOCRResults(allOCRResults);
+                document.getElementById('ocr-progress').style.display = 'none';
+                showStatus('OCR complete!', 'success');
+                
+            } catch (error) {
+                console.error('OCR error:', error);
+                showStatus('OCR failed: ' + error.message, 'error');
+                document.getElementById('ocr-progress').style.display = 'none';
+            }
+        }
+        
+        function mergeOCRResults(newResults) {
+            // Merge new results with existing ones, avoiding duplicates by name
+            newResults.forEach(newResult => {
+                if (!newResult.text) return; // Skip empty results
+                
+                // Check if this name already exists
+                const existingIndex = allOCRResults.findIndex(r => 
+                    r.text.toLowerCase() === newResult.text.toLowerCase()
+                );
+                
+                if (existingIndex === -1) {
+                    // New unique hero - add it
+                    allOCRResults.push(newResult);
+                } else {
+                    // Duplicate - skip it
+                    console.log(`Skipping duplicate: ${newResult.text}`);
+                }
+            });
+        }
+        
+        function addMore() {
+            // Reset to upload section to add more heroes
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('crop-section').style.display = 'none';
+            document.getElementById('preview-section').style.display = 'none';
+            
+            // Clear file input
+            document.getElementById('fileInput').value = '';
+            
+            // Scroll to upload section
+            document.querySelector('.upload-section').scrollIntoView({ behavior: 'smooth' });
+            
+            showStatus('Upload another screenshot to add more heroes', 'info');
+        }
+        
+        function saveToDatabase() {
+            if (allOCRResults.length === 0) {
+                alert('No heroes to save! Please add some heroes first.');
+                return;
+            }
+            
+            // Collect all hero data with current star levels
+            const heroData = allOCRResults.map((result, index) => {
+                const cellNum = index + 1;
+                const stars = document.querySelectorAll(`#stars-${cellNum} .star`);
+                
+                // Calculate current level from star colors
+                let level = 0;
+                let redCount = 0;
+                let blueCount = 0;
+                
+                stars.forEach(star => {
+                    if (star.classList.contains('red')) redCount++;
+                    else if (star.classList.contains('blue')) blueCount++;
+                });
+                
+                if (redCount > 0) {
+                    level = 6 + redCount;
+                } else if (blueCount > 0) {
+                    level = blueCount;
+                } else {
+                    level = 0;
+                }
+                
+                return {
+                    name: result.text,
+                    starLevel: level
+                };
+            });
+            
+            // Create save payload
+            const savePayload = {
+                timestamp: new Date().toISOString(),
+                totalHeroes: heroData.length,
+                heroes: heroData,
+                summary: {
+                    level0: heroData.filter(h => h.starLevel === 0).length,
+                    level1to6: heroData.filter(h => h.starLevel >= 1 && h.starLevel <= 6).length,
+                    level7to12: heroData.filter(h => h.starLevel >= 7 && h.starLevel <= 12).length
+                }
+            };
+            
+            // Display the result
+            document.getElementById('save-data').textContent = JSON.stringify(savePayload, null, 2);
+            document.getElementById('save-result').style.display = 'block';
+            
+            // Scroll to result
+            document.getElementById('save-result').scrollIntoView({ behavior: 'smooth' });
+            
+            showStatus(`Ready to save ${heroData.length} heroes to database!`, 'success');
+            
+            console.log('Save payload:', savePayload);
+        }
+        
+        let manualStarLevel = 0;
+        
+        function showManualEntry() {
+            // Reset form
+            document.getElementById('manual-hero-name').value = '';
+            document.getElementById('manual-star-level').value = 0;
+            manualStarLevel = 0;
+            
+            // Reset star display to 6 yellow
+            updateManualStarDisplay();
+            
+            // Show modal
+            const modal = document.getElementById('manual-entry-modal');
+            modal.style.display = 'flex';
+            
+            // Focus on name input
+            setTimeout(() => {
+                document.getElementById('manual-hero-name').focus();
+            }, 100);
+        }
+        
+        function updateManualStarDisplay() {
+            const level = parseInt(document.getElementById('manual-star-level').value) || 0;
+            manualStarLevel = Math.max(0, Math.min(12, level)); // Clamp between 0-12
+            
+            const stars = document.querySelectorAll('#manual-star-display .manual-star');
+            
+            // Calculate star colors based on level
+            // 0 = 6 yellow
+            // 1-6 = blue stars + remaining yellow (1 blue + 5 yellow, ..., 6 blue)
+            // 7-12 = red stars + remaining blue (1 red + 5 blue, ..., 6 red)
+            
+            let redCount = 0;
+            let blueCount = 0;
+            let yellowCount = 6;
+            
+            if (manualStarLevel === 0) {
+                yellowCount = 6;
+            } else if (manualStarLevel <= 6) {
+                blueCount = manualStarLevel;
+                yellowCount = 6 - manualStarLevel;
+            } else {
+                redCount = manualStarLevel - 6;
+                blueCount = 6 - redCount;
+                yellowCount = 0;
+            }
+            
+            // Update star display
+            let index = 0;
+            stars.forEach((star) => {
+                star.classList.remove('yellow', 'blue', 'red');
+                
+                if (index < redCount) {
+                    star.classList.add('red');
+                } else if (index < redCount + blueCount) {
+                    star.classList.add('blue');
+                } else {
+                    star.classList.add('yellow');
+                }
+                index++;
+            });
+        }
+        
+        function closeManualEntry() {
+            document.getElementById('manual-entry-modal').style.display = 'none';
+        }
+        
+
+        
+        function addManualHero() {
+            const heroName = document.getElementById('manual-hero-name').value.trim();
+            
+            if (!heroName) {
+                alert('Please enter a hero name');
+                return;
+            }
+            
+            // Check for duplicates
+            const existingIndex = allOCRResults.findIndex(r => 
+                r.text.toLowerCase() === heroName.toLowerCase()
+            );
+            
+            if (existingIndex !== -1) {
+                alert(`Hero "${heroName}" already exists in the list!`);
+                return;
+            }
+            
+            // Add to results
+            allOCRResults.push({
+                cellNum: allOCRResults.length + 1,
+                text: heroName,
+                confidence: 100,
+                starLevel: manualStarLevel
+            });
+            
+            // Refresh display
+            displayOCRResults(allOCRResults);
+            
+            // Close modal
+            closeManualEntry();
+            
+            // Show success message
+            showStatus(`Added "${heroName}" with ${manualStarLevel} stars!`, 'success');
+            
+            console.log(`Manually added: ${heroName} (Level ${manualStarLevel})`);
+        }
+        
+        function displayOCRResults(results) {
+            const ocrGrid = document.getElementById('ocr-grid');
+            const ocrResults = document.getElementById('ocr-results');
+            
+            ocrGrid.innerHTML = '';
+            
+            let successCount = 0;
+            
+            results.forEach((result, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'ocr-cell ' + (result.text ? 'success' : 'empty');
+                
+                if (result.text) successCount++;
+                
+                // Use index for unique IDs since we're merging results
+                const uniqueId = index + 1;
+                
+                // Create star rating HTML
+                const starsHTML = createStarRating(uniqueId);
+                
+                cell.innerHTML = `
+                    <div class="ocr-text" data-index="${index}" onclick="editHeroName(${index})" title="Click to edit">${result.text || '(empty)'}</div>
+                    <div class="star-rating" id="stars-${uniqueId}">
+                        ${starsHTML}
+                    </div>
+                `;
+                
+                ocrGrid.appendChild(cell);
+                
+                // Set initial star rating if manually added
+                if (result.starLevel !== undefined) {
+                    setTimeout(() => {
+                        const stars = document.querySelectorAll(`#stars-${uniqueId} .star`);
+                        const level = result.starLevel;
+                        
+                        // Calculate star colors based on level
+                        let redCount = 0;
+                        let blueCount = 0;
+                        let yellowCount = 6;
+                        
+                        if (level === 0) {
+                            yellowCount = 6;
+                        } else if (level <= 6) {
+                            blueCount = level;
+                            yellowCount = 6 - level;
+                        } else {
+                            redCount = level - 6;
+                            blueCount = 6 - redCount;
+                            yellowCount = 0;
+                        }
+                        
+                        // Apply colors
+                        let index = 0;
+                        stars.forEach((star) => {
+                            if (index < redCount) {
+                                star.classList.add('red');
+                                star.dataset.color = 'red';
+                            } else if (index < redCount + blueCount) {
+                                star.classList.add('blue');
+                                star.dataset.color = 'blue';
+                            } else {
+                                star.classList.add('yellow');
+                                star.dataset.color = 'yellow';
+                            }
+                            index++;
+                        });
+                    }, 10);
+                }
+            });
+            
+            document.getElementById('ocr-count').textContent = successCount;
+            ocrResults.style.display = 'block';
+            
+            // Scroll to results
+            ocrResults.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function editHeroName(index) {
+            const textDiv = document.querySelector(`.ocr-text[data-index="${index}"]`);
+            const currentText = allOCRResults[index].text;
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'ocr-text-input';
+            input.value = currentText;
+            input.dataset.index = index;
+            
+            // Replace div with input
+            textDiv.replaceWith(input);
+            input.focus();
+            input.select();
+            
+            // Save on Enter or blur
+            const saveEdit = () => {
+                const newText = input.value.trim();
+                
+                // Update the stored result
+                allOCRResults[index].text = newText;
+                
+                // Create new div
+                const newDiv = document.createElement('div');
+                newDiv.className = 'ocr-text';
+                newDiv.dataset.index = index;
+                newDiv.onclick = () => editHeroName(index);
+                newDiv.title = 'Click to edit';
+                newDiv.textContent = newText || '(empty)';
+                
+                // Replace input with div
+                input.replaceWith(newDiv);
+                
+                // Update parent cell styling
+                const cell = newDiv.closest('.ocr-cell');
+                if (newText) {
+                    cell.className = 'ocr-cell success';
+                } else {
+                    cell.className = 'ocr-cell empty';
+                }
+                
+                // Update count
+                const successCount = allOCRResults.filter(r => r.text).length;
+                document.getElementById('ocr-count').textContent = successCount;
+                
+                console.log(`Updated hero ${index}: "${currentText}" → "${newText}"`);
+            };
+            
+            input.addEventListener('blur', saveEdit);
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    saveEdit();
+                }
+            });
+        }
+        
+        function createStarRating(cellNum) {
+            let html = '';
+            for (let i = 1; i <= 6; i++) {
+                html += `<span class="star yellow" data-cell="${cellNum}" data-value="${i}" onclick="cycleStarLevel(${cellNum})">★</span>`;
+            }
+            return html;
+        }
+        
+        function cycleStarLevel(cellNum) {
+            const stars = document.querySelectorAll(`#stars-${cellNum} .star`);
+            
+            // Get current level from star colors
+            let currentLevel = 0;
+            let redCount = 0;
+            let blueCount = 0;
+            let yellowCount = 0;
+            
+            stars.forEach(star => {
+                if (star.classList.contains('red')) redCount++;
+                else if (star.classList.contains('blue')) blueCount++;
+                else if (star.classList.contains('yellow')) yellowCount++;
+            });
+            
+            // Calculate current level
+            if (redCount > 0) {
+                currentLevel = 6 + redCount;
+            } else if (blueCount > 0) {
+                currentLevel = blueCount;
+            } else {
+                currentLevel = 0;
+            }
+            
+            // Cycle to next level (0 → 1 → 2 → ... → 12 → 0)
+            let nextLevel = (currentLevel + 1) % 13;
+            
+            // Apply new level
+            setStarLevel(cellNum, nextLevel);
+            
+            console.log(`Cell ${cellNum}: Level ${currentLevel} → ${nextLevel}`);
+        }
+        
+        function setStarLevel(cellNum, level) {
+            const stars = document.querySelectorAll(`#stars-${cellNum} .star`);
+            
+            // Calculate star colors based on level
+            let redCount = 0;
+            let blueCount = 0;
+            let yellowCount = 6;
+            
+            if (level === 0) {
+                yellowCount = 6;
+            } else if (level <= 6) {
+                blueCount = level;
+                yellowCount = 6 - level;
+            } else {
+                redCount = level - 6;
+                blueCount = 6 - redCount;
+                yellowCount = 0;
+            }
+            
+            // Apply colors
+            let index = 0;
+            stars.forEach((star) => {
+                star.classList.remove('yellow', 'blue', 'red');
+                
+                if (index < redCount) {
+                    star.classList.add('red');
+                } else if (index < redCount + blueCount) {
+                    star.classList.add('blue');
+                } else {
+                    star.classList.add('yellow');
+                }
+                index++;
+            });
+        }
+    </script>
+</body>
+</html>
