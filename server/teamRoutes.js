@@ -100,6 +100,54 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
 });
 
 /**
+ * POST /api/team/save - Save hero team data directly (without file upload)
+ */
+router.post('/save', async (req, res) => {
+  try {
+    const { heroes, username } = req.body;
+    
+    if (!heroes || !Array.isArray(heroes)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Heroes array is required'
+      });
+    }
+
+    // Use a default username if not provided (for testing)
+    const user = username || 'test_user';
+    
+    console.log(`Saving ${heroes.length} heroes for user: ${user}`);
+    
+    // Transform the hero data to match the expected format
+    const formattedHeroes = heroes.map((hero, index) => ({
+      position: index + 1,
+      heroName: hero.heroName || hero.name || 'Unknown',
+      starLevel: hero.starLevel || 0,
+      rarity: hero.rarity || 'Unknown'
+    }));
+
+    // Save to user's team
+    const savedTeam = await saveUserTeam(user, formattedHeroes);
+
+    res.json({
+      success: true,
+      data: {
+        totalHeroes: formattedHeroes.length,
+        team: savedTeam
+      },
+      message: `Successfully saved ${formattedHeroes.length} heroes`
+    });
+
+  } catch (error) {
+    console.error('Error saving team:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to save team'
+    });
+  }
+});
+
+/**
  * GET /api/team/:username - Get user's team
  */
 router.get('/:username', async (req, res) => {

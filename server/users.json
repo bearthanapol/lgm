@@ -12,5 +12,12 @@
     "email": "bear@b7k.com",
     "passwordHash": "$2b$10$DN.mBXb1Uj7b3WeEuTmdjejTvpY3w6JTVSMwqG0oTQYx7QiI0HYkC",
     "createdAt": "2025-11-18T09:40:22.167Z"
+  },
+  {
+    "id": "4874697f-e20d-436a-bf6a-f55a6cd4dc01",
+    "username": "bjelly",
+    "ign": "bearyJelly",
+    "passwordHash": "$2b$10$6N.UAI6UgsTQO/d4L4kux.FX33ylStiyO.apDLGrcI6OjIpSH7dlC",
+    "createdAt": "2025-11-20T17:10:52.060Z"
   }
 ]

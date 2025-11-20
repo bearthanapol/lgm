@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb');
 
 // MongoDB connection string
-const MONGO_URI = 'mongodb+srv://bearthanapol_db_user:WOdCunHGxm5MGZG9@b7k.cj6f4tm.mongodb.net/?appName=b7k';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://bearthanapol_db_user:WOdCunHGxm5MGZG9@b7k.cj6f4tm.mongodb.net/lgm_gaming?retryWrites=true&w=majority';
 const DB_NAME = 'lgm_gaming';
 
 let client = null;
@@ -16,15 +16,23 @@ async function connectToDatabase() {
   }
 
   try {
-    client = new MongoClient(MONGO_URI);
+    client = new MongoClient(MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
 
     await client.connect();
     console.log('✓ Connected to MongoDB successfully');
     
     db = client.db(DB_NAME);
+    
+    // Test the connection
+    await db.command({ ping: 1 });
+    console.log('✓ MongoDB ping successful');
+    
     return db;
   } catch (error) {
-    console.error('✗ MongoDB connection error:', error);
+    console.error('✗ MongoDB connection error:', error.message);
     throw error;
   }
 }

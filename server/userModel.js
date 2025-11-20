@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
  * @typedef {Object} User
  * @property {string} id - UUID v4
  * @property {string} username - Unique username (3-20 characters)
- * @property {string} email - Unique email address
+ * @property {string} ign - In Game Name
  * @property {string} passwordHash - bcrypt hashed password
  * @property {string} createdAt - ISO 8601 timestamp
  */
@@ -79,15 +79,15 @@ function validatePassword(password) {
 /**
  * Create a new user object
  * @param {string} username - Username
- * @param {string} email - Email address
+ * @param {string} ign - In Game Name
  * @param {string} passwordHash - Hashed password
  * @returns {User} User object
  */
-function createUserObject(username, email, passwordHash) {
+function createUserObject(username, ign, passwordHash) {
   return {
     id: uuidv4(),
     username,
-    email,
+    ign,
     passwordHash,
     createdAt: new Date().toISOString()
   };

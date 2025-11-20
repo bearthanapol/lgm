@@ -1,6 +1,86 @@
 # Changelog - Admin Panel Enhancements
 
-## Version 2.2 - OCR Hero Recognition (Current)
+## Version 2.3 - My Team Enhancements & Auth Updates (Current)
+
+### 🎉 New Features
+
+#### 1. Interactive Star Rating System ⭐
+- **Click-to-edit stars** - Click any star to cycle through levels (0-12)
+- **Color-coded progression:**
+  - Yellow (★): Levels 0-6 (base)
+  - Blue (★): Levels 1-6 (awakened)
+  - Red (★): Levels 7-12 (transcended)
+- **Auto-save** - Changes saved to database automatically
+- **Visual feedback** - Hover effects and smooth transitions
+- **Same system** as test-grid-detection.html
+
+#### 2. In Game Name (IGN) System 👤
+- **Replaced Email with IGN** - Better suited for gaming community
+- **Personalized My Team page** - Shows "[IGN]'s Heroes" heading
+- **Signup improvements:**
+  - "In Game Name" field instead of "Email"
+  - "Confirm Password" field added
+  - Better validation and error messages
+
+#### 3. My Team Page Fixes 🔧
+- **Fixed loading issues** - Heroes now load correctly from database
+- **Hero images from GitHub** - Displays images from repository
+- **Fallback placeholders** - SVG placeholders for missing images
+- **Improved error handling** - Better user feedback
+- **Username detection** - Multiple sources (localStorage, JWT, fallback)
+
+### 🔧 Technical Changes
+
+#### Frontend Updates
+- `public/js/pages.js`:
+  - Fixed `loadUserTeamFromPages()` function
+  - Added star rating system functions
+  - Added IGN display in heading
+  - Improved hero image loading
+- `public/js/signupPage.js`:
+  - Changed Email to IGN field
+  - Added Confirm Password field
+  - Enhanced validation
+- `public/js/authManager.js`:
+  - Updated signup method for IGN
+- `public/css/styles.css`:
+  - Added star rating styles
+
+#### Backend Updates
+- `server/authRoutes.js`:
+  - Updated signup endpoint for IGN
+  - Removed email validation
+  - Added IGN validation
+- `server/userModel.js`:
+  - Replaced `email` with `ign` in user object
+  - Updated documentation
+
+#### Database Schema Changes
+```javascript
+// User object now uses IGN instead of email
+{
+  id: "uuid",
+  username: "player123",
+  ign: "DragonSlayer",  // NEW - replaces email
+  passwordHash: "...",
+  createdAt: "..."
+}
+```
+
+### 🐛 Bug Fixes
+- Fixed My Team page not loading heroes
+- Fixed hero images not displaying
+- Fixed function naming conflicts
+- Fixed server not picking up auth changes
+- Fixed DOM element access timing issues
+
+### 📝 Documentation
+- Created `SESSION_SUMMARY_2024.md` - Comprehensive session notes
+- Updated cache versions (v3 → v9)
+
+---
+
+## Version 2.2 - OCR Hero Recognition
 
 ### 🎉 New Features
 

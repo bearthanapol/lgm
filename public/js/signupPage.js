@@ -19,14 +19,15 @@ function renderSignupPage() {
             <small class="form-hint">3-20 characters</small>
           </div>
           <div class="form-group">
-            <label for="signup-email">Email</label>
+            <label for="signup-ign">In Game Name</label>
             <input 
-              type="email" 
-              id="signup-email" 
-              name="email" 
+              type="text" 
+              id="signup-ign" 
+              name="ign" 
               class="form-input"
               required
-              autocomplete="email"
+              autocomplete="off"
+              placeholder="Your character name in the game"
             />
           </div>
           <div class="form-group">
@@ -41,6 +42,18 @@ function renderSignupPage() {
               autocomplete="new-password"
             />
             <small class="form-hint">Minimum 8 characters</small>
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm-password">Confirm Password</label>
+            <input 
+              type="password" 
+              id="signup-confirm-password" 
+              name="confirmPassword" 
+              class="form-input"
+              required
+              minlength="8"
+              autocomplete="new-password"
+            />
           </div>
           <div id="signup-error" class="error-message"></div>
           <button type="submit" class="btn-primary">Sign Up</button>
@@ -68,11 +81,12 @@ function attachSignupFormHandler(authManager, router) {
       errorDiv.style.display = 'none';
 
       const username = document.getElementById('signup-username').value.trim();
-      const email = document.getElementById('signup-email').value.trim();
+      const ign = document.getElementById('signup-ign').value.trim();
       const password = document.getElementById('signup-password').value;
+      const confirmPassword = document.getElementById('signup-confirm-password').value;
 
       // Client-side validation
-      if (!username || !email || !password) {
+      if (!username || !ign || !password || !confirmPassword) {
         errorDiv.textContent = 'Please fill in all fields';
         errorDiv.style.display = 'block';
         return;
@@ -84,16 +98,20 @@ function attachSignupFormHandler(authManager, router) {
         return;
       }
 
+      if (ign.length < 2) {
+        errorDiv.textContent = 'In Game Name must be at least 2 characters';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
       if (password.length < 8) {
         errorDiv.textContent = 'Password must be at least 8 characters';
         errorDiv.style.display = 'block';
         return;
       }
 
-      // Email format validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        errorDiv.textContent = 'Please enter a valid email address';
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Passwords do not match';
         errorDiv.style.display = 'block';
         return;
       }
@@ -106,7 +124,7 @@ function attachSignupFormHandler(authManager, router) {
       submitBtn.textContent = 'Creating account...';
 
       // Call AuthManager signup method
-      const result = await authManager.signup(username, email, password);
+      const result = await authManager.signup(username, ign, password);
 
       if (result.success) {
         // Show success toast
@@ -130,8 +148,9 @@ function attachSignupFormHandler(authManager, router) {
         submitBtn.classList.remove('btn-loading');
         submitBtn.textContent = originalText;
         
-        // Clear password field for security
+        // Clear password fields for security
         document.getElementById('signup-password').value = '';
+        document.getElementById('signup-confirm-password').value = '';
         
         // Auto-dismiss error after 5 seconds
         setTimeout(() => {

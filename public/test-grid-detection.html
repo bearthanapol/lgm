@@ -155,6 +155,7 @@
             border-radius: 4px;
             text-align: center;
             font-size: 11px;
+            position: relative;
         }
         .ocr-cell.success {
             border-color: #4caf50;
@@ -163,6 +164,29 @@
         .ocr-cell.empty {
             border-color: #f44336;
             background: #ffebee;
+        }
+        .ocr-cell .delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+        .ocr-cell .delete-btn:hover {
+            background: #cc0000;
+            transform: scale(1.1);
         }
         .ocr-cell .ocr-text {
             font-size: 14px;
@@ -266,6 +290,10 @@
 </head>
 <body>
     <div class="container">
+        <div style="margin-bottom: 20px;">
+            <button onclick="backToMyTeam()" style="font-size: 16px; padding: 10px 20px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer;">← Back to My Team</button>
+        </div>
+        
         <h1>🎮 Hero Team Recognition</h1>
         <p>Upload your hero grid screenshot and select the grid area to recognize all 40 heroes.</p>
         
@@ -318,14 +346,10 @@
                     <button onclick="addMore()" style="font-size: 16px; padding: 12px 24px; background: #0066cc;">➕ Add More Heroes</button>
                     <button onclick="showManualEntry()" style="font-size: 16px; padding: 12px 24px; background: #9c27b0; margin-left: 10px;">✍️ Add Hero Manually</button>
                     <button onclick="saveToDatabase()" style="font-size: 16px; padding: 12px 24px; background: #00cc66; margin-left: 10px;">💾 Save to Database</button>
+                    <button onclick="backToMyTeam()" style="font-size: 16px; padding: 12px 24px; background: #ff6600; margin-left: 10px;">← Back to My Team</button>
                 </div>
                 
-                <!-- Save Result Display -->
-                <div id="save-result" style="display: none; margin-top: 30px; padding: 20px; background: #f5f5f5; border-radius: 4px; border: 2px solid #00cc66;">
-                    <h3 style="color: #00cc66; margin-top: 0;">📊 Save Result (Test Mode)</h3>
-                    <p style="color: #666; font-size: 14px;">This is what would be saved to the database:</p>
-                    <pre id="save-data" style="background: #fff; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 12px; border: 1px solid #ddd;"></pre>
-                </div>
+
                 
                 <!-- Manual Entry Modal -->
                 <div id="manual-entry-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
@@ -665,13 +689,15 @@
             document.getElementById('results').style.display = 'block';
             document.getElementById('ocr-progress').style.display = 'block';
             document.getElementById('ocr-results').style.display = 'none';
-            document.getElementById('ocr-status').textContent = 'Extracting name areas...';
+            document.getElementById('ocr-status').textContent = 'Initializing OCR engine...';
             document.getElementById('progress-fill').style.width = '0%';
             
             const ocrResults = [];
             const totalCells = 40;
             
             try {
+                document.getElementById('ocr-status').textContent = 'Starting OCR processing...';
+                document.getElementById('progress-fill').style.width = '2%';
                 // Process each cell
                 for (let row = 0; row < gridInfo.rows; row++) {
                     for (let col = 0; col < gridInfo.cols; col++) {
@@ -712,16 +738,24 @@
                         }
                         nameCtx.putImageData(imageData2, 0, 0);
                         
-                        // Perform OCR
+                        // Perform OCR - using simple recognize without worker for speed
                         try {
-                            const { data: { text, confidence } } = await Tesseract.recognize(
+                            console.log(`Starting OCR for cell ${cellNum}...`);
+                            const startTime = Date.now();
+                            
+                            const result = await Tesseract.recognize(
                                 nameCanvas,
                                 'eng',
                                 {
-                                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz ',
-                                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE
+                                    logger: () => {}, // Disable logging for speed
                                 }
                             );
+                            
+                            const elapsed = Date.now() - startTime;
+                            const text = result.data.text;
+                            const confidence = result.data.confidence;
+                            
+                            console.log(`Cell ${cellNum} completed in ${elapsed}ms - Text: "${text.trim()}"`);
                             
                             const cleanText = text.trim().replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ');
                             
@@ -738,6 +772,9 @@
                                 confidence: 0
                             });
                         }
+                        
+                        // Small delay to allow UI updates
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     }
                 }
                 
@@ -791,7 +828,12 @@
             showStatus('Upload another screenshot to add more heroes', 'info');
         }
         
-        function saveToDatabase() {
+        function backToMyTeam() {
+            // Navigate back to the My Team page
+            window.location.href = '/team/my-team';
+        }
+        
+        async function saveToDatabase() {
             if (allOCRResults.length === 0) {
                 alert('No heroes to save! Please add some heroes first.');
                 return;
@@ -821,29 +863,52 @@
                 }
                 
                 return {
-                    name: result.text,
+                    heroName: result.text,
                     starLevel: level
                 };
             });
             
-            // Create save payload
-            const savePayload = {
-                timestamp: new Date().toISOString(),
-                totalHeroes: heroData.length,
-                heroes: heroData,
-                summary: {
-                    level0: heroData.filter(h => h.starLevel === 0).length,
-                    level1to6: heroData.filter(h => h.starLevel >= 1 && h.starLevel <= 6).length,
-                    level7to12: heroData.filter(h => h.starLevel >= 7 && h.starLevel <= 12).length
+            // Get logged-in username from localStorage
+            const userInfo = localStorage.getItem('lgm_user_info');
+            let username = 'test_user'; // fallback
+            
+            if (userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    username = user.username || 'test_user';
+                } catch (e) {
+                    console.error('Error parsing user info:', e);
                 }
-            };
+            }
             
-            // Display the result
-            document.getElementById('save-data').textContent = JSON.stringify(savePayload, null, 2);
-            document.getElementById('save-result').style.display = 'block';
-            
-            // Scroll to result
-            document.getElementById('save-result').scrollIntoView({ behavior: 'smooth' });
+            try {
+                showStatus('Saving to database...', 'info');
+                
+                const response = await fetch('/api/team/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        heroes: heroData
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus(`✓ Successfully saved ${heroData.length} heroes to database!`, 'success');
+                    alert(`Success! Saved ${heroData.length} heroes to your team.`);
+                } else {
+                    showStatus('Failed to save: ' + (data.error || 'Unknown error'), 'error');
+                    alert('Failed to save to database: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                showStatus('Error saving to database: ' + error.message, 'error');
+                alert('Error saving to database. Please try again.');
+            }
             
             showStatus(`Ready to save ${heroData.length} heroes to database!`, 'success');
             
@@ -978,6 +1043,7 @@
                 const starsHTML = createStarRating(uniqueId);
                 
                 cell.innerHTML = `
+                    <button class="delete-btn" onclick="deleteHero(${index})" title="Delete this hero">×</button>
                     <div class="ocr-text" data-index="${index}" onclick="editHeroName(${index})" title="Click to edit">${result.text || '(empty)'}</div>
                     <div class="star-rating" id="stars-${uniqueId}">
                         ${starsHTML}
@@ -1089,6 +1155,20 @@
                     saveEdit();
                 }
             });
+        }
+        
+        function deleteHero(index) {
+            if (!confirm(`Delete "${allOCRResults[index].text}"?`)) {
+                return;
+            }
+            
+            // Remove from results array
+            allOCRResults.splice(index, 1);
+            
+            // Re-display all results
+            displayOCRResults(allOCRResults);
+            
+            showStatus(`Hero deleted. ${allOCRResults.length} heroes remaining.`, 'info');
         }
         
         function createStarRating(cellNum) {

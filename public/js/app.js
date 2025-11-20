@@ -117,17 +117,36 @@ router.addRoute('/guild/adventure', () => {
 
 // Team Section Routes
 router.addRoute('/team/my-team', () => {
+  console.log('My Team route handler called');
   const pageContent = renderMyTeamPage();
   renderMainLayout('team', 'my-team', pageContent);
   
   // Load content after rendering
   setTimeout(async () => {
-    // Attach screenshot upload handler
-    attachScreenshotUploadHandler();
-    
-    // Load user's saved team if exists
-    await loadUserTeam();
-  }, 100);
+    console.log('setTimeout executed');
+    try {
+      // Attach screenshot upload handler
+      attachScreenshotUploadHandler();
+      
+      // Load user's saved team if exists
+      console.log('Checking if loadUserTeamFromPages exists:', typeof loadUserTeamFromPages);
+      if (typeof loadUserTeamFromPages === 'function') {
+        console.log('Calling loadUserTeamFromPages...');
+        try {
+          await loadUserTeamFromPages();
+          console.log('loadUserTeamFromPages completed');
+        } catch (loadError) {
+          console.error('Error calling loadUserTeamFromPages:', loadError);
+          console.error('Stack trace:', loadError.stack);
+        }
+      } else {
+        console.error('loadUserTeamFromPages function not found');
+      }
+    } catch (error) {
+      console.error('Error in my-team route:', error);
+      console.error('Stack trace:', error.stack);
+    }
+  }, 500);
 });
 
 // Admin Section Routes

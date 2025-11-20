@@ -64,12 +64,18 @@ app.use((err, req, res, next) => {
 // Start server and connect to database
 async function startServer() {
   try {
-    // Connect to MongoDB
-    await connectToDatabase();
+    // Try to connect to MongoDB
+    try {
+      await connectToDatabase();
+    } catch (dbError) {
+      console.warn('⚠ Warning: MongoDB connection failed. Server will run without database.');
+      console.warn('⚠ Database-dependent features will not work.');
+    }
     
     // Start Express server
     app.listen(PORT, () => {
       console.log(`LGM Gaming Website server is running on http://localhost:${PORT}`);
+      console.log(`Open your browser to: http://localhost:${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

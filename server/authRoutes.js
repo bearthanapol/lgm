@@ -1,8 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { validateUsername, validateEmail, validatePassword, createUserObject } = require('./userModel');
-const { findUserByUsername, findUserByEmail, createUser } = require('./dataManager');
+const { validateUsername, validatePassword, createUserObject } = require('./userModel');
+const { findUserByUsername, createUser } = require('./dataManager');
 const { JWT_SECRET } = require('./authMiddleware');
 
 const router = express.Router();
@@ -16,7 +16,7 @@ const SALT_ROUNDS = 10;
  */
 router.post('/signup', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, ign, password } = req.body;
 
     // Validate input data
     const usernameValidation = validateUsername(username);
@@ -27,11 +27,11 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.valid) {
+    // Validate IGN (In Game Name)
+    if (!ign || ign.trim().length < 2) {
       return res.status(400).json({ 
         success: false, 
-        error: emailValidation.error 
+        error: 'In Game Name must be at least 2 characters' 
       });
     }
 
@@ -52,20 +52,11 @@ router.post('/signup', async (req, res) => {
       });
     }
 
-    // Check for duplicate email
-    const existingUserByEmail = await findUserByEmail(email);
-    if (existingUserByEmail) {
-      return res.status(409).json({ 
-        success: false, 
-        error: 'Email already registered' 
-      });
-    }
-
     // Hash password with bcrypt
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-    // Create user object
-    const newUser = createUserObject(username, email, passwordHash);
+    // Create user object with IGN
+    const newUser = createUserObject(username, ign, passwordHash);
 
     // Save user to database
     await createUser(newUser);
@@ -86,7 +77,7 @@ router.post('/signup', async (req, res) => {
       token,
       user: {
         username: newUser.username,
-        email: newUser.email
+        ign: newUser.ign
       }
     });
 
@@ -149,7 +140,7 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         username: user.username,
-        email: user.email
+        ign: user.ign
       }
     });
 

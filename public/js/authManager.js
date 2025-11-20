@@ -41,14 +41,14 @@ class AuthManager {
     }
   }
 
-  async signup(username, email, password) {
+  async signup(username, ign, password) {
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, email, password })
+        body: JSON.stringify({ username, ign, password })
       });
 
       const data = await response.json();
