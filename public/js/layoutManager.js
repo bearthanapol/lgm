@@ -12,7 +12,7 @@ function renderHeader(username, activeSection = '') {
     <nav class="header-nav">
       <a href="/home" class="header-nav-link ${activeSection === 'home' ? 'active' : ''}" data-section="home">Home</a>
       <a href="/lgm/hero" class="header-nav-link ${activeSection === 'lgm' ? 'active' : ''}" data-section="lgm">LGM</a>
-      <a href="/guild/castle-rush" class="header-nav-link ${activeSection === 'guild' ? 'active' : ''}" data-section="guild">Guild</a>
+      <a href="/guild/info" class="header-nav-link ${activeSection === 'guild' ? 'active' : ''}" data-section="guild">Guild</a>
       <a href="/team/my-team" class="header-nav-link ${activeSection === 'team' ? 'active' : ''}" data-section="team">Team</a>
       <a href="/admin/manage" class="header-nav-link ${activeSection === 'admin' ? 'active' : ''}" data-section="admin">Admin</a>
     </nav>
@@ -47,6 +47,7 @@ function renderSidebar(section, activePage = '') {
     `;
   } else if (section === 'guild') {
     sidebarLinks = `
+      <li><a href="/guild/info" class="sidebar-link ${activePage === 'info' ? 'active' : ''}" data-page="info">Guild Info</a></li>
       <li><a href="/guild/castle-rush" class="sidebar-link ${activePage === 'castle-rush' ? 'active' : ''}" data-page="castle-rush">Castle Rush</a></li>
       <li><a href="/guild/guild-war" class="sidebar-link ${activePage === 'guild-war' ? 'active' : ''}" data-page="guild-war">Guild War</a></li>
       <li><a href="/guild/adventure" class="sidebar-link ${activePage === 'adventure' ? 'active' : ''}" data-page="adventure">Adventure Expedition</a></li>
@@ -113,7 +114,7 @@ function attachHeaderEventListeners(authManager, router) {
   // Toggle user dropdown
   const headerUser = document.getElementById('header-user');
   const userDropdown = document.getElementById('user-dropdown');
-  
+
   if (headerUser && userDropdown) {
     headerUser.addEventListener('click', (e) => {
       e.stopPropagation();

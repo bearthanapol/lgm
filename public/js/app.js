@@ -27,26 +27,26 @@ function renderMainLayout(section, page, pageContent) {
   const headerElement = document.getElementById('header');
   const sidebarElement = document.getElementById('sidebar');
   const contentArea = document.getElementById('content');
-  
+
   if (appContainer && headerElement && sidebarElement && contentArea) {
     showContainer('app-container');
-    
+
     // Get username from auth manager
     const userInfo = authManager.getUserInfo();
     const username = userInfo ? userInfo.username : 'User';
-    
+
     // Render header
     headerElement.innerHTML = renderHeader(username, section);
-    
+
     // Render sidebar
     sidebarElement.innerHTML = renderSidebar(section, page);
-    
+
     // Render content
     contentArea.innerHTML = renderContent(pageContent);
-    
+
     // Attach header event listeners (logout, dropdown)
     attachHeaderEventListeners(authManager, router);
-    
+
     // Update active states
     updateActiveStates(section, page);
   }
@@ -76,7 +76,7 @@ router.addRoute('/signup', () => {
 router.addRoute('/home', () => {
   const pageContent = renderHomePage();
   renderMainLayout('home', 'news', pageContent);
-  
+
   // Load published news after rendering
   setTimeout(async () => {
     await loadPublicNews();
@@ -100,6 +100,16 @@ router.addRoute('/lgm/pet', () => {
 });
 
 // Guild Section Routes
+router.addRoute('/guild/info', () => {
+  const pageContent = renderGuildInfoPage();
+  renderMainLayout('guild', 'info', pageContent);
+
+  // Load guild info after rendering
+  setTimeout(() => {
+    loadGuildInfo();
+  }, 100);
+});
+
 router.addRoute('/guild/castle-rush', () => {
   const pageContent = renderCastleRushPage();
   renderMainLayout('guild', 'castle-rush', pageContent);
@@ -108,6 +118,11 @@ router.addRoute('/guild/castle-rush', () => {
 router.addRoute('/guild/guild-war', () => {
   const pageContent = renderGuildWarPage();
   renderMainLayout('guild', 'guild-war', pageContent);
+
+  // Load guild war teams after rendering
+  setTimeout(() => {
+    loadGuildWarTeams();
+  }, 100);
 });
 
 router.addRoute('/guild/adventure', () => {
@@ -120,14 +135,14 @@ router.addRoute('/team/my-team', () => {
   console.log('My Team route handler called');
   const pageContent = renderMyTeamPage();
   renderMainLayout('team', 'my-team', pageContent);
-  
+
   // Load content after rendering
   setTimeout(async () => {
     console.log('setTimeout executed');
     try {
       // Attach screenshot upload handler
       attachScreenshotUploadHandler();
-      
+
       // Load user's saved team if exists
       console.log('Checking if loadUserTeamFromPages exists:', typeof loadUserTeamFromPages);
       if (typeof loadUserTeamFromPages === 'function') {
@@ -153,24 +168,24 @@ router.addRoute('/team/my-team', () => {
 router.addRoute('/admin/manage', () => {
   const pageContent = renderAdminPage();
   renderMainLayout('admin', 'manage', pageContent);
-  
+
   // Load content after rendering
   setTimeout(async () => {
     // Set up tab switching
     setupAdminTabs();
-    
+
     // Load heroes
     await loadHeroes();
-    
+
     // Load news
     await loadNews();
-    
+
     // Attach hero form handler
     attachHeroFormHandler();
-    
+
     // Attach news form handler
     attachNewsFormHandler();
-    
+
     // Attach image preview handler
     attachImagePreviewHandler();
   }, 100);
@@ -180,13 +195,13 @@ router.addRoute('/admin/manage', () => {
 async function loadHeroes() {
   const heroListContainer = document.getElementById('hero-list');
   if (!heroListContainer) return;
-  
+
   try {
     heroListContainer.innerHTML = '<p style="color: #666666;">Loading heroes...</p>';
-    
+
     const response = await fetch('/api/heroes');
     const result = await response.json();
-    
+
     if (result.success && result.data.length > 0) {
       // Group heroes by name
       const groupedHeroes = {};
@@ -197,7 +212,7 @@ async function loadHeroes() {
         }
         groupedHeroes[heroName].push(hero);
       });
-      
+
       // Generate HTML for grouped heroes
       const heroesHTML = Object.entries(groupedHeroes).map(([heroName, skins]) => {
         const firstHero = skins[0];
@@ -206,8 +221,8 @@ async function loadHeroes() {
           const cacheBuster = `?t=${Date.now()}`;
           return `
           <div style="text-align: center;">
-            ${imageUrl ? 
-              `<img src="${imageUrl}${cacheBuster}" alt="${heroName}" style="width: 180px; height: 180px; object-fit: contain; border-radius: 4px; border: 2px solid #ddd; display: block; margin-bottom: 8px; background-color: #f9f9f9;">` : 
+            ${imageUrl ?
+              `<img src="${imageUrl}${cacheBuster}" alt="${heroName}" style="width: 180px; height: 180px; object-fit: contain; border-radius: 4px; border: 2px solid #ddd; display: block; margin-bottom: 8px; background-color: #f9f9f9;">` :
               '<div style="width: 180px; height: 180px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin-bottom: 8px; border: 2px solid #ddd;">No Image</div>'
             }
             <div style="display: flex; gap: 5px;">
@@ -217,7 +232,7 @@ async function loadHeroes() {
           </div>
         `;
         }).join('');
-        
+
         return `
           <div style="background-color: #ffffff; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 15px;">
             <h3 style="color: var(--color-orange); margin-bottom: 8px; font-size: 18px;">${heroName}</h3>
@@ -228,7 +243,7 @@ async function loadHeroes() {
           </div>
         `;
       }).join('');
-      
+
       heroListContainer.innerHTML = heroesHTML;
     } else {
       heroListContainer.innerHTML = '<p style="color: #666666;">No heroes found. Add your first hero above!</p>';
@@ -244,14 +259,14 @@ async function deleteHero(heroId) {
   if (!confirm('Are you sure you want to delete this hero?')) {
     return;
   }
-  
+
   try {
     const response = await fetch(`/api/heroes/${heroId}`, {
       method: 'DELETE'
     });
-    
+
     const result = await response.json();
-    
+
     if (result.success) {
       if (typeof toastManager !== 'undefined') {
         toastManager.success('Hero deleted successfully!');
@@ -275,7 +290,7 @@ async function editHeroImage(heroId, imageUrl, heroName, rarity) {
   // Extract original filename from URL
   const urlParts = imageUrl.split('/');
   const originalFilename = urlParts[urlParts.length - 1];
-  
+
   // Open cropper with the hero's current image
   imageCropper.open(imageUrl, async (croppedImageFile) => {
     try {
@@ -283,10 +298,10 @@ async function editHeroImage(heroId, imageUrl, heroName, rarity) {
       if (typeof toastManager !== 'undefined') {
         toastManager.info('Updating image...');
       }
-      
+
       // Create local preview URL for immediate display
       const localPreviewUrl = URL.createObjectURL(croppedImageFile);
-      
+
       // Immediately update the image in the UI with local preview
       const images = document.querySelectorAll('img');
       images.forEach(img => {
@@ -295,28 +310,28 @@ async function editHeroImage(heroId, imageUrl, heroName, rarity) {
           img.style.border = '3px solid #00cc66'; // Green border to show it's updated
         }
       });
-      
+
       // Create a new File with the original filename to override it
       const fileToUpload = new File([croppedImageFile], originalFilename, { type: croppedImageFile.type });
-      
+
       // Upload the cropped image to GitHub (will override the old file)
       const formData = new FormData();
       formData.append('image', fileToUpload);
-      
+
       const uploadResponse = await fetch('/api/upload/hero-image', {
         method: 'POST',
         body: formData
       });
-      
+
       const uploadResult = await uploadResponse.json();
-      
+
       if (!uploadResult.success) {
         throw new Error(uploadResult.error || 'Failed to upload image');
       }
-      
+
       // The URL should be the same since we used the same filename
       const updatedImageUrl = uploadResult.imageUrl;
-      
+
       // Update hero with the image URL (same URL but file is overwritten)
       const updateResponse = await fetch(`/api/heroes/${heroId}`, {
         method: 'PUT',
@@ -327,14 +342,14 @@ async function editHeroImage(heroId, imageUrl, heroName, rarity) {
           imageUrl: updatedImageUrl
         })
       });
-      
+
       const updateResult = await updateResponse.json();
-      
+
       if (updateResult.success) {
         if (typeof toastManager !== 'undefined') {
           toastManager.success(`Hero "${heroName}" image updated! (Showing preview)`);
         }
-        
+
         // Note: GitHub CDN may take 1-5 minutes to update
         // The local preview will show immediately
         // After page refresh, it will load from GitHub
@@ -370,7 +385,7 @@ router.addRoute('/', () => {
 // Initialize router when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   router.init();
-  
+
   // Set up global error handlers
   setupGlobalErrorHandlers();
 });
@@ -416,11 +431,11 @@ function setupGlobalErrorHandlers() {
  */
 function setupAdminTabs() {
   const tabButtons = document.querySelectorAll('.admin-tab');
-  
+
   tabButtons.forEach(button => {
     button.addEventListener('click', () => {
       const tabName = button.getAttribute('data-tab');
-      
+
       // Update button styles
       tabButtons.forEach(btn => {
         if (btn === button) {
@@ -433,7 +448,7 @@ function setupAdminTabs() {
           btn.classList.remove('active');
         }
       });
-      
+
       // Show/hide tab content
       document.getElementById('heroes-tab').style.display = tabName === 'heroes' ? 'block' : 'none';
       document.getElementById('news-tab').style.display = tabName === 'news' ? 'block' : 'none';
@@ -449,10 +464,10 @@ function attachImagePreviewHandler() {
   const preview = document.getElementById('hero-image-preview');
   const previewImg = document.getElementById('hero-preview-img');
   const selectFromDbBtn = document.getElementById('select-from-db-btn');
-  
+
   // Store the cropped file
   let croppedFile = null;
-  
+
   if (fileInput) {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -461,12 +476,12 @@ function attachImagePreviewHandler() {
         imageCropper.open(file, (croppedImageFile) => {
           // Store cropped file
           croppedFile = croppedImageFile;
-          
+
           // Update file input with cropped file
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(croppedImageFile);
           fileInput.files = dataTransfer.files;
-          
+
           // Show preview
           const reader = new FileReader();
           reader.onload = (event) => {
@@ -481,7 +496,7 @@ function attachImagePreviewHandler() {
       }
     });
   }
-  
+
   // Handle "Select from Database" button
   if (selectFromDbBtn) {
     selectFromDbBtn.addEventListener('click', async () => {
@@ -490,12 +505,12 @@ function attachImagePreviewHandler() {
         imageCropper.open(imageUrl, (croppedImageFile) => {
           // Store cropped file
           croppedFile = croppedImageFile;
-          
+
           // Update file input with cropped file
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(croppedImageFile);
           fileInput.files = dataTransfer.files;
-          
+
           // Show preview
           const reader = new FileReader();
           reader.onload = (event) => {
@@ -517,14 +532,14 @@ async function showDatabaseImageSelector(callback) {
     // Fetch all heroes
     const response = await fetch('/api/heroes');
     const result = await response.json();
-    
+
     if (!result.success || result.data.length === 0) {
       if (typeof toastManager !== 'undefined') {
         toastManager.warning('No heroes found in database');
       }
       return;
     }
-    
+
     // Create modal
     const modal = document.createElement('div');
     modal.id = 'db-image-selector-modal';
@@ -541,7 +556,7 @@ async function showDatabaseImageSelector(callback) {
       justify-content: center;
       overflow: auto;
     `;
-    
+
     // Generate image grid
     const imagesHTML = result.data
       .filter(hero => hero.imageUrl || hero.heroPicture)
@@ -555,7 +570,7 @@ async function showDatabaseImageSelector(callback) {
           </div>
         `;
       }).join('');
-    
+
     modal.innerHTML = `
       <div style="background: #2a2a2a; padding: 30px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -568,9 +583,9 @@ async function showDatabaseImageSelector(callback) {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(modal);
-    
+
     // Add hover effect and click handlers
     const imageItems = modal.querySelectorAll('.db-image-item');
     imageItems.forEach(item => {
@@ -578,31 +593,31 @@ async function showDatabaseImageSelector(callback) {
         item.style.borderColor = 'var(--color-orange)';
         item.style.backgroundColor = 'rgba(255, 102, 0, 0.1)';
       });
-      
+
       item.addEventListener('mouseleave', () => {
         item.style.borderColor = 'transparent';
         item.style.backgroundColor = 'transparent';
       });
-      
+
       item.addEventListener('click', () => {
         const imageUrl = item.getAttribute('data-image-url');
         modal.remove();
         callback(imageUrl);
       });
     });
-    
+
     // Close button
     document.getElementById('close-db-selector').addEventListener('click', () => {
       modal.remove();
     });
-    
+
     // Close on background click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.remove();
       }
     });
-    
+
   } catch (error) {
     console.error('Error loading database images:', error);
     if (typeof toastManager !== 'undefined') {
@@ -617,49 +632,49 @@ async function showDatabaseImageSelector(callback) {
 function attachHeroFormHandler() {
   const form = document.getElementById('add-hero-form');
   if (!form) return;
-  
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Uploading...';
-    
+
     try {
       // Upload image first if file is selected
       const fileInput = document.getElementById('hero-image-file');
       let imageUrl = '';
-      
+
       if (fileInput.files.length > 0) {
         const formData = new FormData();
         formData.append('image', fileInput.files[0]);
-        
+
         const uploadResponse = await fetch('/api/upload/hero-image', {
           method: 'POST',
           body: formData
         });
-        
+
         const uploadResult = await uploadResponse.json();
-        
+
         if (!uploadResult.success) {
           throw new Error(uploadResult.error || 'Failed to upload image');
         }
-        
+
         imageUrl = uploadResult.imageUrl;
-        
+
         if (typeof toastManager !== 'undefined') {
           toastManager.success('Image uploaded to GitHub!');
         }
       }
-      
+
       // Create hero with uploaded image URL
       const heroData = {
         name: document.getElementById('hero-name').value,
         rarity: document.getElementById('hero-rarity').value,
         imageUrl: imageUrl
       };
-      
+
       const response = await fetch('/api/heroes', {
         method: 'POST',
         headers: {
@@ -667,18 +682,18 @@ function attachHeroFormHandler() {
         },
         body: JSON.stringify(heroData)
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         if (typeof toastManager !== 'undefined') {
           toastManager.success(`Hero "${heroData.name}" added successfully!`);
         }
-        
+
         // Reset form
         form.reset();
         document.getElementById('hero-image-preview').style.display = 'none';
-        
+
         // Reload hero list
         await loadHeroes();
       } else {
@@ -707,18 +722,18 @@ function attachNewsFormHandler() {
     console.error('News form not found!');
     return;
   }
-  
+
   console.log('News form handler attached');
-  
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     console.log('News form submitted');
-    
+
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
-    
+
     try {
       const newsData = {
         title: document.getElementById('news-title').value,
@@ -726,9 +741,9 @@ function attachNewsFormHandler() {
         category: document.getElementById('news-category').value,
         published: document.getElementById('news-published').checked
       };
-      
+
       console.log('Sending news data:', newsData);
-      
+
       const response = await fetch('/api/news', {
         method: 'POST',
         headers: {
@@ -736,19 +751,19 @@ function attachNewsFormHandler() {
         },
         body: JSON.stringify(newsData)
       });
-      
+
       console.log('Response status:', response.status);
       const result = await response.json();
       console.log('Response data:', result);
-      
+
       if (result.success) {
         if (typeof toastManager !== 'undefined') {
           toastManager.success('News created successfully!');
         }
-        
+
         // Reset form
         form.reset();
-        
+
         // Reload news list
         await loadNews();
       } else {
@@ -776,13 +791,13 @@ function attachNewsFormHandler() {
 async function loadNews() {
   const newsListContainer = document.getElementById('news-list');
   if (!newsListContainer) return;
-  
+
   try {
     newsListContainer.innerHTML = '<p style="color: #666666;">Loading news...</p>';
-    
+
     const response = await fetch('/api/news');
     const result = await response.json();
-    
+
     if (result.success && result.data.length > 0) {
       const newsHTML = result.data.map(news => {
         const date = new Date(news.createdAt).toLocaleDateString('en-US', {
@@ -790,16 +805,16 @@ async function loadNews() {
           month: 'short',
           day: 'numeric'
         });
-        
+
         const categoryColors = {
           general: '#666666',
           update: '#0066cc',
           event: '#ff6600',
           maintenance: '#cc0000'
         };
-        
+
         const categoryColor = categoryColors[news.category] || '#666666';
-        
+
         return `
           <div style="background-color: #ffffff; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
@@ -817,7 +832,7 @@ async function loadNews() {
           </div>
         `;
       }).join('');
-      
+
       newsListContainer.innerHTML = newsHTML;
     } else {
       newsListContainer.innerHTML = '<p style="color: #666666;">No news found. Create your first news post above!</p>';
@@ -834,13 +849,13 @@ async function loadNews() {
 async function loadPublicNews() {
   const newsListContainer = document.getElementById('public-news-list');
   if (!newsListContainer) return;
-  
+
   try {
     newsListContainer.innerHTML = '<p style="color: #666666;">Loading news...</p>';
-    
+
     const response = await fetch('/api/news?published=true');
     const result = await response.json();
-    
+
     if (result.success && result.data.length > 0) {
       const newsHTML = result.data.map(news => {
         const date = new Date(news.createdAt).toLocaleDateString('en-US', {
@@ -850,14 +865,14 @@ async function loadPublicNews() {
           hour: '2-digit',
           minute: '2-digit'
         });
-        
+
         const categoryColors = {
           general: '#666666',
           update: '#0066cc',
           event: '#ff6600',
           maintenance: '#cc0000'
         };
-        
+
         const categoryColor = categoryColors[news.category] || '#666666';
         const categoryLabels = {
           general: 'General',
@@ -865,7 +880,7 @@ async function loadPublicNews() {
           event: 'Event',
           maintenance: 'Maintenance'
         };
-        
+
         return `
           <div style="background-color: #ffffff; padding: 25px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="margin-bottom: 15px;">
@@ -879,7 +894,7 @@ async function loadPublicNews() {
           </div>
         `;
       }).join('');
-      
+
       newsListContainer.innerHTML = newsHTML;
     } else {
       newsListContainer.innerHTML = `
@@ -902,14 +917,14 @@ async function deleteNews(newsId) {
   if (!confirm('Are you sure you want to delete this news post?')) {
     return;
   }
-  
+
   try {
     const response = await fetch(`/api/news/${newsId}`, {
       method: 'DELETE'
     });
-    
+
     const result = await response.json();
-    
+
     if (result.success) {
       if (typeof toastManager !== 'undefined') {
         toastManager.success('News deleted successfully!');
@@ -937,7 +952,7 @@ function attachScreenshotUploadHandler() {
   const fileInput = document.getElementById('screenshot-file');
   const preview = document.getElementById('screenshot-preview');
   const previewImg = document.getElementById('screenshot-preview-img');
-  
+
   if (fileInput) {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -953,52 +968,52 @@ function attachScreenshotUploadHandler() {
       }
     });
   }
-  
+
   if (!form) return;
-  
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const submitBtn = document.getElementById('upload-btn');
     const processingStatus = document.getElementById('processing-status');
     const originalText = submitBtn.textContent;
-    
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Processing...';
     processingStatus.style.display = 'block';
-    
+
     try {
       const file = fileInput.files[0];
       if (!file) {
         throw new Error('Please select a screenshot');
       }
-      
+
       // Get username from auth manager
       const userInfo = authManager.getUserInfo();
       const username = userInfo ? userInfo.username : 'guest';
-      
+
       const formData = new FormData();
       formData.append('screenshot', file);
       formData.append('username', username);
-      
+
       console.log('Uploading screenshot for processing...');
-      
+
       const response = await fetch('/api/team/upload', {
         method: 'POST',
         body: formData
       });
-      
+
       const result = await response.json();
       console.log('Processing result:', result);
-      
+
       if (result.success) {
         if (typeof toastManager !== 'undefined') {
           toastManager.success(`Recognized ${result.data.totalHeroes} heroes!`);
         }
-        
+
         // Display results
         displayTeamResults(result.data);
-        
+
         // Reset form
         form.reset();
         preview.style.display = 'none';
@@ -1029,24 +1044,24 @@ function displayTeamResults(data) {
   const recognizedHeroesEl = document.getElementById('recognized-heroes');
   const unknownHeroesEl = document.getElementById('unknown-heroes');
   const heroGridEl = document.getElementById('hero-grid');
-  
+
   if (!resultsDiv || !heroGridEl) return;
-  
+
   // Show results section
   resultsDiv.style.display = 'block';
-  
+
   // Update stats
   totalHeroesEl.textContent = '40';
   recognizedHeroesEl.textContent = data.totalHeroes;
   unknownHeroesEl.textContent = data.unknownHeroes;
-  
+
   // Create hero grid (4 rows × 10 columns)
   const gridHTML = data.heroes.map(hero => {
     const isUnknown = hero.heroName === 'Unknown';
     const bgColor = isUnknown ? '#ffcccc' : '#ccffcc';
     const textColor = isUnknown ? '#cc0000' : '#006600';
     const similarityPercent = Math.round(hero.similarity * 100);
-    
+
     return `
       <div style="background-color: ${bgColor}; padding: 8px; border: 1px solid var(--color-orange); border-radius: 4px; text-align: center;">
         <p style="color: ${textColor}; font-size: 11px; font-weight: 600; margin-bottom: 4px;">${hero.heroName}</p>
@@ -1055,13 +1070,13 @@ function displayTeamResults(data) {
       </div>
     `;
   }).join('');
-  
+
   heroGridEl.innerHTML = `
     <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px;">
       ${gridHTML}
     </div>
   `;
-  
+
   // Scroll to results
   resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -1072,13 +1087,13 @@ function displayTeamResults(data) {
 async function loadUserTeam() {
   const userInfo = authManager.getUserInfo();
   const username = userInfo ? userInfo.username : null;
-  
+
   if (!username) return;
-  
+
   try {
     const response = await fetch(`/api/team/${username}`);
     const result = await response.json();
-    
+
     if (result.success && result.data) {
       displayTeamResults(result.data);
     }
