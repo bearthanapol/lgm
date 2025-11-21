@@ -7,7 +7,7 @@
     --color-white: #ffffff;
     --color-light-gray: #cccccc;
     --color-error: #ff3333;
-    
+
     --font-family: 'Segoe UI', Arial, sans-serif;
     --header-height: 60px;
     --sidebar-width: 200px;
@@ -23,8 +23,8 @@
 
 body {
     font-family: var(--font-family);
-    background-color: #ffffff;
-    color: #000000;
+    background-color: var(--color-black);
+    color: var(--color-white);
     font-size: 14px;
     line-height: 1.6;
     overflow-x: hidden;
@@ -164,7 +164,7 @@ a:hover {
     left: 0;
     width: 100%;
     height: var(--header-height);
-    background-color: #ffffff;
+    background-color: var(--color-black);
     border-bottom: var(--border-width) solid var(--color-orange);
     display: flex;
     align-items: center;
@@ -176,7 +176,7 @@ a:hover {
 .header-logo {
     font-size: 24px;
     font-weight: bold;
-    color: #000000;
+    color: var(--color-white);
 }
 
 .header-nav {
@@ -188,7 +188,7 @@ a:hover {
 .header-nav a {
     font-size: 16px;
     font-weight: 500;
-    color: #000000;
+    color: var(--color-white);
 }
 
 .header-nav a.active {
@@ -212,7 +212,7 @@ a:hover {
     top: 100%;
     right: 0;
     margin-top: 10px;
-    background-color: #ffffff;
+    background-color: var(--color-black);
     border: var(--border-width) solid var(--color-orange);
     padding: 10px;
     min-width: 150px;
@@ -228,7 +228,7 @@ a:hover {
     padding: 10px;
     background-color: transparent;
     border: none;
-    color: #000000;
+    color: var(--color-white);
     cursor: pointer;
     text-align: left;
     font-family: var(--font-family);
@@ -246,7 +246,7 @@ a:hover {
     left: 0;
     width: var(--sidebar-width);
     height: calc(100vh - var(--header-height));
-    background-color: #ffffff;
+    background-color: var(--color-black);
     border-right: var(--border-width) solid var(--color-orange);
     padding: 20px 0;
     overflow-y: auto;
@@ -263,13 +263,13 @@ a:hover {
 .sidebar-nav a {
     display: block;
     padding: 12px 20px;
-    color: #000000;
+    color: var(--color-white);
     font-size: 16px;
     transition: background-color 0.3s, color 0.3s;
 }
 
 .sidebar-nav a:hover {
-    background-color: #f0f0f0;
+    background-color: var(--color-dark-gray);
 }
 
 .sidebar-nav a.active {
@@ -283,7 +283,7 @@ a:hover {
     margin-left: var(--sidebar-width);
     min-height: calc(100vh - var(--header-height));
     padding: 30px;
-    background-color: #ffffff;
+    background-color: var(--color-black);
 }
 
 /* Scrollbar Styles */
@@ -292,7 +292,7 @@ a:hover {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f0f0f0;
+    background: var(--color-dark-gray);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -310,12 +310,12 @@ a:hover {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background-color: #ffffff;
+    background-color: var(--color-black);
 }
 
 .auth-card {
     width: 400px;
-    background-color: #ffffff;
+    background-color: var(--color-dark-gray);
     border: var(--border-width) solid var(--color-orange);
     padding: 40px;
     border-radius: 8px;
@@ -323,7 +323,7 @@ a:hover {
 
 .auth-card h1 {
     text-align: center;
-    color: #000000;
+    color: var(--color-white);
     margin-bottom: 30px;
 }
 
@@ -733,7 +733,7 @@ a:hover {
     color: #ddd;
     cursor: pointer;
     transition: all 0.2s;
-    text-shadow: 0 0 2px rgba(0,0,0,0.3);
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
     user-select: none;
 }
 
@@ -743,15 +743,15 @@ a:hover {
 
 .team-star.yellow {
     color: #ffd700;
-    text-shadow: 0 0 4px rgba(255,215,0,0.5);
+    text-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
 }
 
 .team-star.blue {
     color: #4FC3F7;
-    text-shadow: 0 0 4px rgba(79,195,247,0.5);
+    text-shadow: 0 0 4px rgba(79, 195, 247, 0.5);
 }
 
 .team-star.red {
     color: #F44336;
-    text-shadow: 0 0 4px rgba(244,67,54,0.5);
+    text-shadow: 0 0 4px rgba(244, 67, 54, 0.5);
 }

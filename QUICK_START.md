@@ -24,6 +24,7 @@ Your LGM Gaming Website now has enhanced admin features:
 1. Create a `.env` file in your project root:
    ```bash
    GITHUB_TOKEN=ghp_paste_your_token_here
+   MONGO_URI=mongodb+srv://your_user:your_password@your_cluster.mongodb.net/lgm_gaming
    PORT=3000
    ```
 

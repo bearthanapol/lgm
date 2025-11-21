@@ -10,7 +10,7 @@ const path = require('path');
 
 // Test configuration
 const BASE_URL = 'http://localhost:3000';
-const USERS_FILE = path.join(__dirname, 'server', 'users.json');
+const USERS_FILE = path.join(__dirname, '..', 'server', 'users.json');
 
 // Test utilities
 let testResults = {

@@ -352,14 +352,14 @@ function renderMyTeamPage() {
 
 async function loadUserTeamFromPages() {
   console.log('[pages.js] loadUserTeamFromPages called');
-  
+
   // Wait a bit to ensure DOM is ready
   await new Promise(resolve => setTimeout(resolve, 300));
-  
+
   const loadingDiv = document.getElementById('team-loading');
   const heroesDiv = document.getElementById('team-heroes');
   const emptyDiv = document.getElementById('team-empty');
-  
+
   if (!loadingDiv || !heroesDiv || !emptyDiv) {
     console.error('[pages.js] Required DOM elements not found:', {
       loadingDiv: !!loadingDiv,
@@ -368,16 +368,16 @@ async function loadUserTeamFromPages() {
     });
     return;
   }
-  
+
   try {
     // Get logged-in username and IGN from localStorage
     let username = null;
     let ign = null;
-    
+
     // Try multiple sources for username
     const userInfo = localStorage.getItem('lgm_user_info');
     const token = localStorage.getItem('lgm_token');
-    
+
     if (userInfo) {
       try {
         const user = JSON.parse(userInfo);
@@ -388,7 +388,7 @@ async function loadUserTeamFromPages() {
         console.error('[pages.js] Error parsing user info:', e);
       }
     }
-    
+
     // If still no username, try to decode from token
     if (!username && token) {
       try {
@@ -399,24 +399,24 @@ async function loadUserTeamFromPages() {
         console.error('[pages.js] Error decoding token:', e);
       }
     }
-    
+
     // Last resort: check if there's a username in localStorage directly
     if (!username) {
       username = localStorage.getItem('username') || 'test_user';
       console.log('[pages.js] Using fallback username:', username);
     }
-    
+
     // Update the heading with IGN if available
     const headingElement = document.getElementById('team-heroes-heading');
     if (headingElement && ign) {
       headingElement.textContent = `${ign}'s Heroes`;
     }
-    
+
     console.log('[pages.js] Fetching team for username:', username);
     const response = await fetch(`/api/team/${username}`);
-    
+
     console.log('[pages.js] Response status:', response.status);
-    
+
     if (!response.ok) {
       if (response.status === 404) {
         console.log('[pages.js] No team found for user');
@@ -426,15 +426,15 @@ async function loadUserTeamFromPages() {
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const data = await response.json();
     console.log('[pages.js] Team data received:', data);
-    
+
     if (loadingDiv) loadingDiv.style.display = 'none';
-    
+
     if (data.success && data.data && data.data.heroes && data.data.heroes.length > 0) {
       const team = data.data;
-      
+
       // Show stats
       const statsDiv = document.getElementById('team-stats');
       if (statsDiv) {
@@ -443,27 +443,27 @@ async function loadUserTeamFromPages() {
           <strong>Last Updated:</strong> ${new Date(team.lastUpdated).toLocaleString()}
         `;
       }
-      
+
       // Show heroes in a grid
       const gridDiv = document.getElementById('team-grid');
       if (gridDiv) {
         gridDiv.innerHTML = team.heroes.map((hero, index) => {
           const starLevel = hero.starLevel || 0;
           const position = hero.position || index + 1;
-          
+
           // Get hero image URL
           let imageUrl = hero.matchedImageUrl;
           if (!imageUrl) {
             const heroFileName = hero.heroName.replace(/\s+/g, '%20');
             imageUrl = `https://raw.githubusercontent.com/bearthanapol/lgm/main/images/heroes/${heroFileName}.png`;
           }
-          
+
           // Create fallback SVG placeholder
           const placeholderSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0f0f0' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3E${encodeURIComponent(hero.heroName)}%3C/text%3E%3C/svg%3E`;
-          
+
           // Create star rating HTML
           const starsHTML = createTeamStarRating(position, starLevel);
-          
+
           return `
             <div style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 10px; text-align: center;">
               <img src="${imageUrl}" 
@@ -471,19 +471,30 @@ async function loadUserTeamFromPages() {
                    style="width: 100%; height: 120px; object-fit: contain; margin-bottom: 8px; background: #f9f9f9;"
                    onerror="this.onerror=null; this.src='${placeholderSvg}';"
                    loading="lazy">
-              <div style="font-weight: 600; color: #000; margin-bottom: 4px; font-size: 13px;">${hero.heroName}</div>
+              <div style="margin-bottom: 8px;">
+                <input type="text" 
+                       id="hero-name-${position}" 
+                       value="${hero.heroName}" 
+                       style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-weight: 600; font-size: 13px;"
+                       placeholder="Hero Name">
+              </div>
               <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Pos: ${position}</div>
               <div class="team-star-rating" id="team-stars-${position}" style="margin-top: 8px; display: flex; justify-content: center; gap: 2px;">
                 ${starsHTML}
               </div>
+              <button onclick="saveHeroEdit(${position})" 
+                      style="margin-top: 8px; padding: 6px 12px; background: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%;">
+                Save
+              </button>
             </div>
           `;
         }).join('');
-        
+
+
         // Attach star click handlers after rendering
         attachTeamStarHandlers();
       }
-      
+
       if (heroesDiv) heroesDiv.style.display = 'block';
     } else {
       console.log('[pages.js] No heroes in team data');
@@ -504,12 +515,12 @@ async function loadUserTeamFromPages() {
  */
 function createTeamStarRating(position, initialLevel) {
   let html = '';
-  
+
   // Calculate star colors based on level
   let redCount = 0;
   let blueCount = 0;
   let yellowCount = 6;
-  
+
   if (initialLevel === 0) {
     yellowCount = 6;
   } else if (initialLevel <= 6) {
@@ -520,7 +531,7 @@ function createTeamStarRating(position, initialLevel) {
     blueCount = 6 - redCount;
     yellowCount = 0;
   }
-  
+
   // Create stars with appropriate colors
   for (let i = 0; i < 6; i++) {
     let colorClass = 'yellow';
@@ -529,10 +540,10 @@ function createTeamStarRating(position, initialLevel) {
     } else if (i < redCount + blueCount) {
       colorClass = 'blue';
     }
-    
+
     html += `<span class="team-star ${colorClass}" data-position="${position}" data-index="${i}">★</span>`;
   }
-  
+
   return html;
 }
 
@@ -541,7 +552,7 @@ function createTeamStarRating(position, initialLevel) {
  */
 function attachTeamStarHandlers() {
   document.querySelectorAll('.team-star').forEach(star => {
-    star.addEventListener('click', function() {
+    star.addEventListener('click', function () {
       const position = parseInt(this.dataset.position);
       cycleTeamStarLevel(position);
     });
@@ -553,17 +564,17 @@ function attachTeamStarHandlers() {
  */
 function cycleTeamStarLevel(position) {
   const stars = document.querySelectorAll(`#team-stars-${position} .team-star`);
-  
+
   // Get current level from star colors
   let currentLevel = 0;
   let redCount = 0;
   let blueCount = 0;
-  
+
   stars.forEach(star => {
     if (star.classList.contains('red')) redCount++;
     else if (star.classList.contains('blue')) blueCount++;
   });
-  
+
   // Calculate current level
   if (redCount > 0) {
     currentLevel = 6 + redCount;
@@ -572,16 +583,16 @@ function cycleTeamStarLevel(position) {
   } else {
     currentLevel = 0;
   }
-  
+
   // Cycle to next level (0 → 1 → 2 → ... → 12 → 0)
   let nextLevel = (currentLevel + 1) % 13;
-  
+
   // Apply new level
   setTeamStarLevel(position, nextLevel);
-  
+
   // Save to database
   saveTeamStarLevel(position, nextLevel);
-  
+
   console.log(`Position ${position}: Level ${currentLevel} → ${nextLevel}`);
 }
 
@@ -590,12 +601,12 @@ function cycleTeamStarLevel(position) {
  */
 function setTeamStarLevel(position, level) {
   const stars = document.querySelectorAll(`#team-stars-${position} .team-star`);
-  
+
   // Calculate star colors based on level
   let redCount = 0;
   let blueCount = 0;
   let yellowCount = 6;
-  
+
   if (level === 0) {
     yellowCount = 6;
   } else if (level <= 6) {
@@ -606,12 +617,12 @@ function setTeamStarLevel(position, level) {
     blueCount = 6 - redCount;
     yellowCount = 0;
   }
-  
+
   // Apply colors
   let index = 0;
   stars.forEach((star) => {
     star.classList.remove('yellow', 'blue', 'red');
-    
+
     if (index < redCount) {
       star.classList.add('red');
     } else if (index < redCount + blueCount) {
@@ -632,7 +643,7 @@ async function saveTeamStarLevel(position, level) {
     let username = null;
     const userInfo = localStorage.getItem('lgm_user_info');
     const token = localStorage.getItem('lgm_token');
-    
+
     if (userInfo) {
       try {
         const user = JSON.parse(userInfo);
@@ -641,7 +652,7 @@ async function saveTeamStarLevel(position, level) {
         console.error('Error parsing user info:', e);
       }
     }
-    
+
     if (!username && token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -650,22 +661,22 @@ async function saveTeamStarLevel(position, level) {
         console.error('Error decoding token:', e);
       }
     }
-    
+
     if (!username) {
       username = localStorage.getItem('username') || 'test_user';
     }
-    
+
     // Get current team data
     const response = await fetch(`/api/team/${username}`);
     if (!response.ok) {
       throw new Error('Failed to fetch team data');
     }
-    
+
     const data = await response.json();
     if (!data.success || !data.data || !data.data.heroes) {
       throw new Error('Invalid team data');
     }
-    
+
     // Update the star level for the specific hero
     const heroes = data.data.heroes.map(hero => {
       if (hero.position === position) {
@@ -673,7 +684,7 @@ async function saveTeamStarLevel(position, level) {
       }
       return hero;
     });
-    
+
     // Save updated team
     const saveResponse = await fetch('/api/team/save', {
       method: 'POST',
@@ -685,9 +696,9 @@ async function saveTeamStarLevel(position, level) {
         heroes: heroes
       })
     });
-    
+
     const saveData = await saveResponse.json();
-    
+
     if (saveData.success) {
       console.log(`Saved star level ${level} for position ${position}`);
     } else {
@@ -695,5 +706,130 @@ async function saveTeamStarLevel(position, level) {
     }
   } catch (error) {
     console.error('Error saving star level:', error);
+  }
+}
+
+/**
+ * Save hero edit (name and star level)
+ */
+async function saveHeroEdit(position) {
+  try {
+    // Get username
+    let username = null;
+    const userInfo = localStorage.getItem('lgm_user_info');
+    const token = localStorage.getItem('lgm_token');
+
+    if (userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+        username = user.username;
+      } catch (e) {
+        console.error('Error parsing user info:', e);
+      }
+    }
+
+    if (!username && token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        username = payload.username;
+      } catch (e) {
+        console.error('Error decoding token:', e);
+      }
+    }
+
+    if (!username) {
+      username = localStorage.getItem('username') || 'test_user';
+    }
+
+    // Get the new hero name from input
+    const nameInput = document.getElementById(`hero-name-${position}`);
+    if (!nameInput) {
+      console.error('Hero name input not found for position:', position);
+      return;
+    }
+    const newHeroName = nameInput.value.trim();
+
+    if (!newHeroName) {
+      alert('Hero name cannot be empty!');
+      return;
+    }
+
+    // Get current star level from the stars
+    const stars = document.querySelectorAll(`#team-stars-${position} .team-star`);
+    let currentLevel = 0;
+    let redCount = 0;
+    let blueCount = 0;
+
+    stars.forEach(star => {
+      if (star.classList.contains('red')) redCount++;
+      else if (star.classList.contains('blue')) blueCount++;
+    });
+
+    // Calculate current level
+    if (redCount > 0) {
+      currentLevel = 6 + redCount;
+    } else if (blueCount > 0) {
+      currentLevel = blueCount;
+    } else {
+      currentLevel = 0;
+    }
+
+    // Get current team data
+    const response = await fetch(`/api/team/${username}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch team data');
+    }
+
+    const data = await response.json();
+    if (!data.success || !data.data || !data.data.heroes) {
+      throw new Error('Invalid team data');
+    }
+
+    // Update the hero name and star level for the specific hero
+    const heroes = data.data.heroes.map(hero => {
+      if (hero.position === position) {
+        return {
+          ...hero,
+          heroName: newHeroName,
+          starLevel: currentLevel
+        };
+      }
+      return hero;
+    });
+
+    // Save updated team
+    const saveResponse = await fetch('/api/team/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: username,
+        heroes: heroes
+      })
+    });
+
+    const saveData = await saveResponse.json();
+
+    if (saveData.success) {
+      // Show success feedback
+      const button = event.target;
+      const originalText = button.textContent;
+      button.textContent = '✓ Saved!';
+      button.style.background = '#4caf50';
+
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.style.background = 'var(--color-orange)';
+      }, 2000);
+
+      console.log(`Saved hero at position ${position}: ${newHeroName} (${currentLevel} stars)`);
+    } else {
+      alert('Failed to save: ' + (saveData.error || 'Unknown error'));
+      console.error('Failed to save hero edit:', saveData.error);
+    }
+  } catch (error) {
+    alert('Error saving hero: ' + error.message);
+    console.error('Error saving hero edit:', error);
   }
 }

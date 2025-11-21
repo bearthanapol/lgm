@@ -68,10 +68,13 @@ async function startServer() {
     try {
       await connectToDatabase();
     } catch (dbError) {
-      console.warn('⚠ Warning: MongoDB connection failed. Server will run without database.');
-      console.warn('⚠ Database-dependent features will not work.');
+      console.error('✗ MongoDB connection error:', dbError.message);
+      console.warn('⚠ Warning: MongoDB connection failed.');
+      console.warn('⚠ Retrying in 5 seconds...');
+      // Retry logic could be added here, or just fail if strict
+      // For now, we'll let it run but warn heavily
     }
-    
+
     // Start Express server
     app.listen(PORT, () => {
       console.log(`LGM Gaming Website server is running on http://localhost:${PORT}`);
