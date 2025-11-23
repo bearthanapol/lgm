@@ -619,6 +619,7 @@ async function loadUserTeamFromPages() {
       if (gridDiv) {
         gridDiv.innerHTML = team.heroes.map((hero, index) => {
           const starLevel = hero.starLevel || 0;
+          const ring = hero.ring || '';
           const position = hero.position || index + 1;
 
           // Get hero image URL
@@ -648,9 +649,17 @@ async function loadUserTeamFromPages() {
                        style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-weight: 600; font-size: 13px;"
                        placeholder="Hero Name">
               </div>
-              <div style="font-size: 11px; color: #666; margin-bottom: 4px;">Pos: ${position}</div>
               <div class="team-star-rating" id="team-stars-${position}" style="margin-top: 8px; display: flex; justify-content: center; gap: 2px;">
                 ${starsHTML}
+              </div>
+              <div style="margin-top: 8px;">
+                <select id="hero-ring-${position}" 
+                        style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; background: white;">
+                  <option value="" ${ring === '' ? 'selected' : ''}>No Ring</option>
+                  <option value="Immortality" ${ring === 'Immortality' ? 'selected' : ''}>Immortality</option>
+                  <option value="Revive" ${ring === 'Revive' ? 'selected' : ''}>Revive</option>
+                  <option value="Barrier" ${ring === 'Barrier' ? 'selected' : ''}>Barrier</option>
+                </select>
               </div>
               <button onclick="saveHeroEdit(${position})" 
                       style="margin-top: 8px; padding: 6px 12px; background: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; width: 100%;">
@@ -847,7 +856,7 @@ async function saveTeamStarLevel(position, level) {
       throw new Error('Invalid team data');
     }
 
-    // Update the star level for the specific hero
+    // Update the star level for the specific hero (preserve ring value)
     const heroes = data.data.heroes.map(hero => {
       if (hero.position === position) {
         return { ...hero, starLevel: level };
@@ -924,6 +933,10 @@ async function saveHeroEdit(position) {
       return;
     }
 
+    // Get ring selection
+    const ringSelect = document.getElementById(`hero-ring-${position}`);
+    const selectedRing = ringSelect ? ringSelect.value : '';
+
     // Get current star level from the stars
     const stars = document.querySelectorAll(`#team-stars-${position} .team-star`);
     let currentLevel = 0;
@@ -955,13 +968,14 @@ async function saveHeroEdit(position) {
       throw new Error('Invalid team data');
     }
 
-    // Update the hero name and star level for the specific hero
+    // Update the hero name, star level, and ring for the specific hero
     const heroes = data.data.heroes.map(hero => {
       if (hero.position === position) {
         return {
           ...hero,
           heroName: newHeroName,
-          starLevel: currentLevel
+          starLevel: currentLevel,
+          ring: selectedRing
         };
       }
       return hero;
@@ -2451,20 +2465,36 @@ async function searchForTeam() {
       return;
     }
 
-    listDiv.innerHTML = teams.map(team => `
-      <div style="background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="color: var(--color-orange); font-weight: bold; font-size: 14px; margin-bottom: 4px;">${team.username}</div>
-            Has: ${team.heroes.filter(h => heroNames.includes(h.heroName)).map(h => {
-      const stars = h.starLevel ? ` <span style="color: #ffd700;">${h.starLevel}★</span>` : '';
-      const ring = h.ring ? ` <span title="Has Ring">💍</span>` : '';
-      return `${h.heroName}${stars}${ring}`;
-    }).join(', ')}
-          </div>
+    listDiv.innerHTML = teams.map(team => {
+      // Get user's IGN if available, otherwise use username
+      const displayName = team.username; // You can add IGN support later if needed
+
+      return `
+        <div style="background: #1a1a1a; padding: 15px; border-radius: 4px; border: 1px solid #333;">
+          <div style="color: var(--color-orange); font-weight: bold; font-size: 16px; margin-bottom: 8px;">${displayName}</div>
+          <div style="color: #ccc; font-size: 13px; margin-bottom: 10px;">Has:</div>
+          ${team.heroes.filter(h => heroNames.includes(h.heroName)).map(h => {
+        const heroName = h.heroName || 'Unknown';
+        const starLevel = h.starLevel || 0;
+        const ring = h.ring || 'No Ring';
+
+        return `
+              <div style="background: #2a2a2a; padding: 8px; margin-bottom: 6px; border-radius: 4px; border-left: 3px solid var(--color-orange);">
+                <div style="color: white; font-weight: 600; font-size: 14px;">${heroName}</div>
+                <div style="color: #aaa; font-size: 12px; margin-top: 4px;">
+                  <span style="color: #ffd700;">★ ${starLevel}</span> / 
+                  <span style="color: #4FC3F7;">${ring}</span>
+                </div>
+              </div>
+            `;
+      }).join('')}
+          <button onclick="pickGuildWarTeam('${team.username}', '${heroNames.join(',')}', ${JSON.stringify(team.heroes.filter(h => heroNames.includes(h.heroName)))})" 
+                  style="margin-top: 10px; background: var(--color-orange); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; width: 100%;">
+            Pick This Team
+          </button>
         </div>
-        <button onclick="pickGuildWarTeam('${team.username}', '${heroNames.join(',')}')" style="background: var(--color-orange); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Pick</button>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
   } catch (error) {
     console.error('Error searching for team:', error);
@@ -2475,7 +2505,7 @@ async function searchForTeam() {
 /**
  * Pick a team for Guild War
  */
-async function pickGuildWarTeam(targetUsername, heroNamesStr) {
+async function pickGuildWarTeam(targetUsername, heroNamesStr, heroDetails = []) {
   let username = null;
   const userInfo = localStorage.getItem('lgm_user_info');
   if (userInfo) {
@@ -2500,7 +2530,8 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr) {
       body: JSON.stringify({
         username,
         targetUsername,
-        targetHeroes
+        targetHeroes,
+        heroDetails // Include full hero details with star and ring info
       })
     });
 
@@ -2571,6 +2602,7 @@ async function loadGWarNoti() {
     if (data.success && data.data) {
       const selection = data.data;
       const targetHeroes = selection.targetHeroes || [];
+      const heroDetails = selection.heroDetails || [];
 
       contentDiv.innerHTML = `
         <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 2px solid var(--color-orange); max-width: 600px; margin: 0 auto;">
@@ -2582,9 +2614,23 @@ async function loadGWarNoti() {
           </div>
           
           <h3 style="color: white; margin-top: 25px; font-size: 16px;">Target Heroes:</h3>
-          <div style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
-            ${targetHeroes.map(heroName => `
-              <div style="background: #333; padding: 15px; border-radius: 6px; color: white; border: 1px solid #444; min-width: 100px; text-align: center;">
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+            ${heroDetails.length > 0 ? heroDetails.map(hero => {
+        const heroName = hero.heroName || 'Unknown';
+        const starLevel = hero.starLevel || 0;
+        const ring = hero.ring || 'No Ring';
+
+        return `
+                <div style="background: #2a2a2a; padding: 12px; border-radius: 6px; border-left: 3px solid var(--color-orange);">
+                  <div style="color: white; font-weight: bold; font-size: 15px; margin-bottom: 6px;">${heroName}</div>
+                  <div style="color: #aaa; font-size: 13px;">
+                    <span style="color: #ffd700;">★ ${starLevel}</span> / 
+                    <span style="color: #4FC3F7;">${ring}</span>
+                  </div>
+                </div>
+              `;
+      }).join('') : targetHeroes.map(heroName => `
+              <div style="background: #333; padding: 15px; border-radius: 6px; color: white; border: 1px solid #444; text-align: center;">
                 <div style="font-weight: bold;">${heroName}</div>
               </div>
             `).join('')}
