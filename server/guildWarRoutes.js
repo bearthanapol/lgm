@@ -27,14 +27,14 @@ router.get('/', async (req, res) => {
 router.get('/number/:teamNumber', async (req, res) => {
   try {
     const team = await guildWarModel.getEnemyTeamByNumber(req.params.teamNumber);
-    
+
     if (!team) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
       });
     }
-    
+
     res.json({
       success: true,
       data: team
@@ -54,14 +54,14 @@ router.get('/number/:teamNumber', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const team = await guildWarModel.getEnemyTeamById(req.params.id);
-    
+
     if (!team) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
       });
     }
-    
+
     res.json({
       success: true,
       data: team
@@ -81,16 +81,16 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { teamNumber } = req.body;
-    
+
     if (!teamNumber) {
       return res.status(400).json({
         success: false,
         error: 'Missing required field: teamNumber'
       });
     }
-    
+
     const newTeam = await guildWarModel.createEnemyTeam(req.body);
-    
+
     res.status(201).json({
       success: true,
       data: newTeam,
@@ -111,14 +111,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const updated = await guildWarModel.updateEnemyTeam(req.params.id, req.body);
-    
+
     if (!updated) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Enemy team updated successfully'
@@ -138,23 +138,23 @@ router.put('/:id', async (req, res) => {
 router.post('/:id/heroes', async (req, res) => {
   try {
     const { heroname, heroPicture } = req.body;
-    
+
     if (!heroname || !heroPicture) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields: heroname, heroPicture'
       });
     }
-    
+
     const updated = await guildWarModel.addHeroToEnemyTeam(req.params.id, req.body);
-    
+
     if (!updated) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Hero added to team successfully'
@@ -174,14 +174,14 @@ router.post('/:id/heroes', async (req, res) => {
 router.delete('/:id/heroes/:heroname', async (req, res) => {
   try {
     const updated = await guildWarModel.removeHeroFromEnemyTeam(req.params.id, req.params.heroname);
-    
+
     if (!updated) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Hero removed from team successfully'
@@ -201,14 +201,14 @@ router.delete('/:id/heroes/:heroname', async (req, res) => {
 router.put('/:id/heroes/:heroname', async (req, res) => {
   try {
     const updated = await guildWarModel.updateHeroInEnemyTeam(req.params.id, req.params.heroname, req.body);
-    
+
     if (!updated) {
       return res.status(404).json({
         success: false,
         error: 'Team or hero not found'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Hero updated successfully'
@@ -228,14 +228,14 @@ router.put('/:id/heroes/:heroname', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await guildWarModel.deleteEnemyTeam(req.params.id);
-    
+
     if (!deleted) {
       return res.status(404).json({
         success: false,
         error: 'Team not found'
       });
     }
-    
+
     res.json({
       success: true,
       message: 'Enemy team deleted successfully'
@@ -264,6 +264,91 @@ router.get('/order/:order', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch teams'
+    });
+  }
+});
+
+
+
+/**
+ * POST /api/guildwar/search - Search for users with specific heroes
+ * (Moved here from teamRoutes due to routing issues)
+ */
+router.post('/search', async (req, res) => {
+  try {
+    const { heroes } = req.body;
+
+    if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Heroes array is required'
+      });
+    }
+
+    // Import from userTeamModel
+    const { searchTeamsByHeroes } = require('./userTeamModel');
+    const teams = await searchTeamsByHeroes(heroes);
+
+    res.json({
+      success: true,
+      data: teams
+    });
+  } catch (error) {
+    console.error('Error searching teams:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to search teams'
+    });
+  }
+});
+
+
+/**
+ * POST /api/guildwar/selection - Save selected target
+ */
+router.post('/selection', async (req, res) => {
+  try {
+    const { username, targetUsername, targetHeroes } = req.body;
+
+    if (!username || !targetUsername) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username and target username are required'
+      });
+    }
+
+    await guildWarModel.saveGuildWarSelection(username, {
+      targetUsername,
+      targetHeroes
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error saving selection:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save selection'
+    });
+  }
+});
+
+/**
+ * GET /api/guildwar/selection/:username - Get saved selection
+ */
+router.get('/selection/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const selection = await guildWarModel.getGuildWarSelection(username);
+
+    res.json({
+      success: true,
+      data: selection
+    });
+  } catch (error) {
+    console.error('Error fetching selection:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch selection'
     });
   }
 });

@@ -220,5 +220,31 @@ module.exports = {
   removeHeroFromEnemyTeam,
   updateHeroInEnemyTeam,
   deleteEnemyTeam,
-  getTeamsByOrder
+  getTeamsByOrder,
+  saveGuildWarSelection,
+  getGuildWarSelection
 };
+
+const SELECTION_COLLECTION = 'guildWar_selections';
+
+/**
+ * Save Guild War selection for a user
+ */
+async function saveGuildWarSelection(username, selectionData) {
+  const db = getDatabase();
+  // Upsert selection for the user
+  const result = await db.collection(SELECTION_COLLECTION).updateOne(
+    { username },
+    { $set: { ...selectionData, updatedAt: new Date() } },
+    { upsert: true }
+  );
+  return result;
+}
+
+/**
+ * Get Guild War selection for a user
+ */
+async function getGuildWarSelection(username) {
+  const db = getDatabase();
+  return await db.collection(SELECTION_COLLECTION).findOne({ username });
+}

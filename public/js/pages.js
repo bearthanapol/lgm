@@ -240,7 +240,7 @@ function renderGuildWarPage() {
       </div>
       
       <!-- Hero Selector Modal -->
-      <div id="hero-selector-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
+      <div id="hero-selector-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10001; overflow-y: auto;">
         <div style="max-width: 1000px; margin: 50px auto; background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="color: var(--color-orange); margin: 0;">Select Hero</h2>
@@ -463,30 +463,57 @@ function renderMyTeamPage() {
   return `
     <div class="page-content">
       <h1>My Team</h1>
-      <p>Manage your hero collection with our advanced recognition tool.</p>
+      <p>Manage your hero collection and view Guild War notifications.</p>
       
-      <div style="margin-top: 20px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
-        <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎮 Hero Recognition Tool</h2>
-        <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
-        <button onclick="window.location.href='/test-grid-detection.html'" style="display: inline-block; padding: 15px 40px; background: white; color: #667eea; border: none; border-radius: 6px; font-size: 18px; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'">
-          🚀 Open Hero Recognition Tool
-        </button>
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.3);">
-          <p style="margin: 0; font-size: 14px; opacity: 0.8;">✨ Features: OCR Recognition • Manual Entry • Inline Editing • Star Levels • Batch Processing</p>
-        </div>
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
+        <button onclick="switchMyTeamTab('team')" id="tab-btn-team" style="background: var(--color-orange); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">My Team</button>
+        <button onclick="switchMyTeamTab('gwar-noti')" id="tab-btn-gwar-noti" style="background: #333; color: #888; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">GWar Noti</button>
       </div>
-      
-      <div style="margin-top: 40px;">
-        <h2 id="team-heroes-heading">Your Heroes</h2>
-        <div id="team-loading" style="text-align: center; padding: 40px; color: #666;">
+
+      <!-- My Team Content -->
+      <div id="tab-content-team">
+        <div style="margin-top: 20px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
+          <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎮 Hero Recognition Tool</h2>
+          <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
+          
+          <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <label for="team-upload" class="action-button" style="cursor: pointer; display: inline-block;">
+              📸 Upload Screenshot
+            </label>
+            <input type="file" id="team-upload" accept="image/*" style="display: none;" onchange="handleTeamUpload(this)">
+            
+            <button onclick="saveUserTeam()" class="action-button" style="background: #4CAF50;">
+              💾 Save Team
+            </button>
+          </div>
+          
+          <div style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+            <label style="display: inline-flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="use-ocr-checkbox" checked style="margin-right: 8px;">
+              Use OCR (Better Accuracy)
+            </label>
+          </div>
+        </div>
+
+        <div id="team-loading" style="text-align: center; margin-top: 40px;">
+          <div class="spinner"></div>
           <p>Loading your team...</p>
         </div>
+
         <div id="team-heroes" style="display: none;">
           <div id="team-stats" style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;"></div>
           <div id="team-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
         </div>
+
         <div id="team-empty" style="display: none; text-align: center; padding: 40px; color: #666;">
           <p>No heroes saved yet. Use the Hero Recognition Tool to add heroes to your team!</p>
+        </div>
+      </div>
+
+      <!-- GWar Noti Content -->
+      <div id="tab-content-gwar-noti" style="display: none;">
+        <div id="gwar-noti-content">
+          <p style="color: #888; text-align: center;">Loading notification...</p>
         </div>
       </div>
     </div>
@@ -1335,7 +1362,8 @@ function renderGuildWarTeams(teams) {
   const mainCastleTeams = teams.filter(t => t.teamNumber >= 96 && t.teamNumber <= 115);
 
   // Grid style
-  const gridStyle = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px;';
+  // Grid style
+  const gridStyle = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;';
 
   if (outerBailey1Div) {
     outerBailey1Div.innerHTML = `
@@ -1434,7 +1462,7 @@ function renderGuildWarTeamCard(team) {
   });
 
   return `
-    <div class="guild-war-team-card" data-team-number="${team.teamNumber}" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 6px; padding: 6px; opacity: ${opacity};">
+    <div class="guild-war-team-card" data-team-number="${team.teamNumber}" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 6px; padding: 8px; opacity: ${opacity};">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
         <h3 style="color: var(--color-orange); margin: 0; font-size: 12px;">Team ${team.teamNumber}</h3>
         <div style="display: flex; align-items: center; gap: 4px;">
@@ -1513,9 +1541,13 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
   const downSkill = skills[1] || '0';
 
   return `
-    <div style="background: #1a1a1a; border: 2px solid var(--color-orange); border-radius: 6px; padding: 4px; min-height: 130px; display: flex; flex-direction: column; font-size: 9px;">
+    <div style="background: #1a1a1a; border: 2px solid var(--color-orange); border-radius: 6px; padding: 5px; min-height: 140px; display: flex; flex-direction: column; font-size: 10px;">
       <!-- Hero Image -->
-      <div style="text-align: center; margin-bottom: 2px;">
+      <div 
+        onclick="openHeroSelector(${teamNumber}, '${teamId}', ${slotIndex})"
+        style="text-align: center; margin-bottom: 2px; cursor: pointer; position: relative;"
+        title="Click to change hero"
+      >
         ${hero.heroPicture ?
       `<img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; border: 1px solid var(--color-orange);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23333%22 width=%2240%22 height=%2240%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%228%22%3ENo%3C/text%3E%3C/svg%3E'">` :
       `<div style="width: 40px; height: 40px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border: 1px solid var(--color-orange); margin: 0 auto;">No Img</div>`
@@ -1528,17 +1560,17 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
       </div>
       
       <!-- Position Controls (F/B) -->
-      <div style="margin-bottom: 2px;">
-        <div style="display: flex; gap: 1px;">
+      <div style="margin-bottom: 4px;">
+        <div style="display: flex; gap: 2px; justify-content: center;">
           <button
             onclick="setHeroPosition(${teamNumber}, '${teamId}', '${hero.heroname}', 1)"
-            style="flex: 1; padding: 1px; background: ${isFront ? '#2196F3' : '#333'}; color: white; border: 1px solid ${isFront ? '#2196F3' : '#666'}; border-radius: 2px; font-size: 8px; font-weight: bold; cursor: pointer;"
+            style="width: 20px; padding: 2px 0; background: ${isFront ? '#2196F3' : '#333'}; color: white; border: 1px solid ${isFront ? '#2196F3' : '#666'}; border-radius: 3px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center;"
           >
             F
           </button>
           <button
             onclick="setHeroPosition(${teamNumber}, '${teamId}', '${hero.heroname}', 3)"
-            style="flex: 1; padding: 1px; background: ${isBack ? '#d32f2f' : '#333'}; color: white; border: 1px solid ${isBack ? '#d32f2f' : '#666'}; border-radius: 2px; font-size: 8px; font-weight: bold; cursor: pointer;"
+            style="width: 20px; padding: 2px 0; background: ${isBack ? '#d32f2f' : '#333'}; color: white; border: 1px solid ${isBack ? '#d32f2f' : '#666'}; border-radius: 3px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center;"
           >
             B
           </button>
@@ -1546,35 +1578,41 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
       </div>
       
       <!-- Skills and Ring Row -->
-      <div style="margin-bottom: 2px; display: flex; gap: 2px; align-items: start;">
+      <div style="margin-bottom: 4px; display: flex; gap: 4px; align-items: center; justify-content: center;">
         <!-- Skills Column -->
-        <div style="flex: 1;">
-          <div style="display: flex; flex-direction: column; gap: 1px;">
-            <!-- Up Skill -->
-            <div style="display: flex; align-items: center; gap: 1px;">
-              <button 
-                onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 0, 'up')"
-                style="width: 12px; height: 12px; padding: 0; background: #4CAF50; color: white; border: none; border-radius: 2px; font-size: 7px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;"
-                title="Up Skill"
-              >
-                U
-              </button>
-              <div style="width: 16px; height: 14px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--color-white); font-size: 8px; font-weight: bold;">
-                ${upSkill}
-              </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <!-- Up Skill -->
+          <div style="display: flex; align-items: center; gap: 2px;">
+            <button 
+              onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 0, 'up')"
+              style="width: 14px; height: 14px; padding: 0; background: #4CAF50; color: white; border: none; border-radius: 2px; font-size: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+              title="Up Skill"
+            >
+              U
+            </button>
+            <div 
+              onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 0, 'up')"
+              style="width: 16px; height: 14px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--color-white); font-size: 9px; font-weight: bold; cursor: pointer;"
+              title="Click to cycle 0-3"
+            >
+              ${upSkill}
             </div>
-            <!-- Down Skill -->
-            <div style="display: flex; align-items: center; gap: 1px;">
-              <button 
-                onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 1, 'up')"
-                style="width: 12px; height: 12px; padding: 0; background: #4CAF50; color: white; border: none; border-radius: 2px; font-size: 7px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;"
-                title="Down Skill"
-              >
-                D
-              </button>
-              <div style="width: 16px; height: 14px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--color-white); font-size: 8px; font-weight: bold;">
-                ${downSkill}
-              </div>
+          </div>
+          <!-- Down Skill -->
+          <div style="display: flex; align-items: center; gap: 2px;">
+            <button 
+              onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 1, 'up')"
+              style="width: 14px; height: 14px; padding: 0; background: #4CAF50; color: white; border: none; border-radius: 2px; font-size: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+              title="Down Skill"
+            >
+              D
+            </button>
+            <div 
+              onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 1, 'up')"
+              style="width: 16px; height: 14px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--color-white); font-size: 9px; font-weight: bold; cursor: pointer;"
+              title="Click to cycle 0-3"
+            >
+              ${downSkill}
             </div>
           </div>
         </div>
@@ -1583,31 +1621,24 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
         <div style="flex-shrink: 0;">
           <div 
             onclick="openRingSelector(${teamNumber}, '${teamId}', '${hero.heroname}')"
-            style="cursor: pointer; width: 28px; height: 28px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden;"
+            style="cursor: pointer; width: 30px; height: 30px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden;"
             title="Click to change ring"
           >
             ${hero.ring ?
       `<img src="${hero.ring}" alt="Ring" style="width: 100%; height: 100%; object-fit: cover;">` :
-      `<span style="color: #666; font-size: 6px;">+</span>`
+      `<span style="color: #666; font-size: 8px;">+</span>`
     }
           </div>
         </div>
       </div>
       
-      <!-- Actions -->
-      <div style="display: flex; gap: 1px;">
-        <button
-          onclick="editGuildWarHero(${teamNumber}, '${teamId}', '${hero.heroname}')"
-          style="flex: 1; padding: 1px; background: #4CAF50; color: white; border: none; border-radius: 2px; font-size: 7px; cursor: pointer;"
-        >
-          Edit
-        </button>
-        <button
-          onclick="removeHeroFromTeam(${teamNumber}, '${teamId}', '${hero.heroname}')"
-          style="flex: 1; padding: 1px; background: #d32f2f; color: white; border: none; border-radius: 2px; font-size: 7px; cursor: pointer;"
-        >
-          Del
-        </button>
+      <!-- Remove Button (Small X at top right) -->
+      <div 
+        onclick="removeHeroFromTeam(${teamNumber}, '${teamId}', '${hero.heroname}')"
+        style="position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; background: #d32f2f; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; cursor: pointer; z-index: 10;"
+        title="Remove Hero"
+      >
+        ×
       </div>
     </div>
   `;
@@ -1945,6 +1976,9 @@ function filterHeroSelector(query) {
 /**
  * Select hero from database and add to team
  */
+/**
+ * Select hero from database and add/replace in team
+ */
 async function selectHeroFromDatabase(heroname, heroPicture) {
   if (!currentHeroSelectorTeamNumber || currentHeroSelectorSlotIndex === null) {
     alert('Invalid selection context');
@@ -1953,6 +1987,7 @@ async function selectHeroFromDatabase(heroname, heroPicture) {
 
   try {
     let teamId = currentHeroSelectorTeamId;
+    let currentHeroes = [];
 
     // If team doesn't exist, create it first
     if (!teamId || teamId === 'null') {
@@ -1971,18 +2006,43 @@ async function selectHeroFromDatabase(heroname, heroPicture) {
       }
 
       teamId = createData.data._id;
+    } else {
+      // Fetch current team to get existing heroes
+      const teamResponse = await fetch(`/api/guildwar/${teamId}`);
+      const teamData = await teamResponse.json();
+      if (teamData.success && teamData.data) {
+        currentHeroes = teamData.data.heroes || [];
+      }
     }
 
-    // Add hero to team
-    const response = await fetch(`/api/guildwar/${teamId}/heroes`, {
-      method: 'POST',
+    // Prepare new hero object
+    // If replacing, preserve the position (order)
+    const existingHero = currentHeroes[currentHeroSelectorSlotIndex];
+    const newHero = {
+      heroname: heroname,
+      heroPicture: heroPicture,
+      skills: [], // Reset skills for new hero
+      ring: '',   // Reset ring for new hero
+      order: existingHero ? existingHero.order : null // Preserve position (F/B)
+    };
+
+    // Update the heroes array
+    // Ensure array is long enough if adding to a specific slot (though UI usually fills sequentially, 
+    // but safe to handle gaps or direct index assignment)
+    if (currentHeroSelectorSlotIndex >= currentHeroes.length) {
+      // Pushing new hero
+      currentHeroes.push(newHero);
+    } else {
+      // Replacing existing hero
+      currentHeroes[currentHeroSelectorSlotIndex] = newHero;
+    }
+
+    // Update the team with the new heroes list
+    const response = await fetch(`/api/guildwar/${teamId}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        heroname: heroname,
-        heroPicture: heroPicture,
-        skills: [],
-        ring: '',
-        order: null
+        heroes: currentHeroes
       })
     });
 
@@ -1992,11 +2052,11 @@ async function selectHeroFromDatabase(heroname, heroPicture) {
       closeHeroSelector();
       loadGuildWarTeams(); // Reload teams
     } else {
-      alert('Failed to add hero: ' + data.error);
+      alert('Failed to update team: ' + data.error);
     }
   } catch (error) {
-    console.error('Error adding hero:', error);
-    alert('Error adding hero: ' + error.message);
+    console.error('Error selecting hero:', error);
+    alert('Error selecting hero: ' + error.message);
   }
 }
 
@@ -2366,22 +2426,176 @@ async function searchForTeam() {
   const listDiv = document.getElementById('find-team-results-list');
 
   resultsDiv.style.display = 'block';
-  listDiv.innerHTML = '<p style="color: #888;">Searching...</p>';
+  listDiv.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">Searching...</p>';
 
-  // In a real app, this would query the backend to find members with these available heroes
-  // For now, we'll simulate it or check against loaded guild info if available
+  try {
+    // Extract hero names
+    const heroNames = selectedHeroes.map(h => h.heroname);
 
-  // Mock result for demonstration
-  setTimeout(() => {
-    listDiv.innerHTML = `
-      <div style="background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
-        <div style="color: var(--color-orange); font-weight: bold;">Member 1</div>
-        <div style="font-size: 12px; color: #888;">Has all 3 heroes</div>
+    const response = await fetch('/api/guildwar/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ heroes: heroNames })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error);
+    }
+
+    const teams = data.data || [];
+
+    if (teams.length === 0) {
+      listDiv.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">No members found with these heroes.</p>';
+      return;
+    }
+
+    listDiv.innerHTML = teams.map(team => `
+      <div style="background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="color: var(--color-orange); font-weight: bold; font-size: 14px; margin-bottom: 4px;">${team.username}</div>
+            Has: ${team.heroes.filter(h => heroNames.includes(h.heroName)).map(h => {
+      const stars = h.starLevel ? ` <span style="color: #ffd700;">${h.starLevel}★</span>` : '';
+      const ring = h.ring ? ` <span title="Has Ring">💍</span>` : '';
+      return `${h.heroName}${stars}${ring}`;
+    }).join(', ')}
+          </div>
+        </div>
+        <button onclick="pickGuildWarTeam('${team.username}', '${heroNames.join(',')}')" style="background: var(--color-orange); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Pick</button>
       </div>
-      <div style="background: #1a1a1a; padding: 10px; border-radius: 4px; border: 1px solid #333;">
-        <div style="color: var(--color-orange); font-weight: bold;">Member 2</div>
-        <div style="font-size: 12px; color: #888;">Has 2 heroes</div>
-      </div>
-    `;
-  }, 500);
+    `).join('');
+
+  } catch (error) {
+    console.error('Error searching for team:', error);
+    listDiv.innerHTML = `<p style="color: #d32f2f; grid-column: 1/-1; text-align: center;">Error: ${error.message}</p>`;
+  }
+}
+
+/**
+ * Pick a team for Guild War
+ */
+async function pickGuildWarTeam(targetUsername, heroNamesStr) {
+  let username = null;
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (userInfo) {
+    try {
+      username = JSON.parse(userInfo).username;
+    } catch (e) {
+      console.error('Error parsing user info', e);
+    }
+  }
+
+  if (!username) {
+    alert('Please login first');
+    return;
+  }
+
+  const targetHeroes = heroNamesStr.split(',');
+
+  try {
+    const response = await fetch('/api/guildwar/selection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        targetUsername,
+        targetHeroes
+      })
+    });
+
+    if (response.ok) {
+      alert(`Picked ${targetUsername} for Guild War! Check 'GWar Noti' in My Team.`);
+      closeFindTeamModal();
+    } else {
+      alert('Failed to pick team');
+    }
+  } catch (error) {
+    console.error('Error picking team:', error);
+    alert('Error picking team');
+  }
+}
+
+/**
+ * Switch tabs in My Team page
+ */
+function switchMyTeamTab(tabName) {
+  const btnTeam = document.getElementById('tab-btn-team');
+  const btnNoti = document.getElementById('tab-btn-gwar-noti');
+  const contentTeam = document.getElementById('tab-content-team');
+  const contentNoti = document.getElementById('tab-content-gwar-noti');
+
+  if (btnTeam && btnNoti && contentTeam && contentNoti) {
+    btnTeam.style.background = tabName === 'team' ? 'var(--color-orange)' : '#333';
+    btnTeam.style.color = tabName === 'team' ? 'white' : '#888';
+
+    btnNoti.style.background = tabName === 'gwar-noti' ? 'var(--color-orange)' : '#333';
+    btnNoti.style.color = tabName === 'gwar-noti' ? 'white' : '#888';
+
+    contentTeam.style.display = tabName === 'team' ? 'block' : 'none';
+    contentNoti.style.display = tabName === 'gwar-noti' ? 'block' : 'none';
+
+    if (tabName === 'gwar-noti') {
+      loadGWarNoti();
+    }
+  }
+}
+
+/**
+ * Load Guild War Notification (Selected Target)
+ */
+async function loadGWarNoti() {
+  const contentDiv = document.getElementById('gwar-noti-content');
+
+  let username = null;
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (userInfo) {
+    try {
+      username = JSON.parse(userInfo).username;
+    } catch (e) {
+      console.error('Error parsing user info', e);
+    }
+  }
+
+  if (!username) {
+    contentDiv.innerHTML = '<p style="color: #d32f2f; text-align: center;">Please login to view notifications.</p>';
+    return;
+  }
+
+  contentDiv.innerHTML = '<p style="color: #888; text-align: center;">Loading...</p>';
+
+  try {
+    const response = await fetch(`/api/guildwar/selection/${username}`);
+    const data = await response.json();
+
+    if (data.success && data.data) {
+      const selection = data.data;
+      const targetHeroes = selection.targetHeroes || [];
+
+      contentDiv.innerHTML = `
+        <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 2px solid var(--color-orange); max-width: 600px; margin: 0 auto;">
+          <h2 style="color: var(--color-orange); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">Current Target</h2>
+          
+          <div style="margin-top: 20px;">
+            <div style="font-size: 18px; color: white; margin-bottom: 5px;">Player: <span style="color: var(--color-orange); font-weight: bold;">${selection.targetUsername}</span></div>
+            <div style="color: #888; font-size: 12px;">Selected on: ${new Date(selection.updatedAt).toLocaleString()}</div>
+          </div>
+          
+          <h3 style="color: white; margin-top: 25px; font-size: 16px;">Target Heroes:</h3>
+          <div style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+            ${targetHeroes.map(heroName => `
+              <div style="background: #333; padding: 15px; border-radius: 6px; color: white; border: 1px solid #444; min-width: 100px; text-align: center;">
+                <div style="font-weight: bold;">${heroName}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      contentDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 40px;">No active Guild War target selected.<br>Go to Guild War > Find Team to pick a target.</p>';
+    }
+  } catch (error) {
+    console.error('Error loading notification:', error);
+    contentDiv.innerHTML = `<p style="color: #d32f2f; text-align: center;">Error: ${error.message}</p>`;
+  }
 }

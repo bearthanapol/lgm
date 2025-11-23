@@ -11,21 +11,21 @@ const COLLECTION_NAME = 'user_teams';
  */
 async function saveUserTeam(username, heroes) {
   const db = getDatabase();
-  
+
   const team = {
     username: username,
     heroes: heroes,
     totalHeroes: heroes.filter(h => h.heroName !== 'Unknown').length,
     lastUpdated: new Date()
   };
-  
+
   // Upsert: update if exists, insert if not
   const result = await db.collection(COLLECTION_NAME).findOneAndUpdate(
     { username: username },
     { $set: team },
     { upsert: true, returnDocument: 'after' }
   );
-  
+
   return result.value || result;
 }
 
@@ -67,7 +67,7 @@ async function deleteUserTeam(username) {
  */
 async function getHeroStatistics() {
   const db = getDatabase();
-  
+
   const stats = await db.collection(COLLECTION_NAME).aggregate([
     { $unwind: '$heroes' },
     { $match: { 'heroes.heroName': { $ne: 'Unknown' } } },
@@ -88,7 +88,7 @@ async function getHeroStatistics() {
       }
     }
   ]).toArray();
-  
+
   return stats;
 }
 
@@ -97,5 +97,27 @@ module.exports = {
   getUserTeam,
   getAllUserTeams,
   deleteUserTeam,
-  getHeroStatistics
+  getHeroStatistics,
+  searchTeamsByHeroes
 };
+
+/**
+ * Search for teams that contain specific heroes
+ * @param {Array<string>} heroNames - List of hero names to search for
+ * @returns {Promise<Array>} - List of matching teams/users
+ */
+async function searchTeamsByHeroes(heroNames) {
+  const db = getDatabase();
+
+  if (!heroNames || heroNames.length === 0) {
+    return [];
+  }
+
+  // Find teams that have ALL of the specified heroes
+  // We use $all operator on the heroes.heroName field
+  const teams = await db.collection(COLLECTION_NAME).find({
+    'heroes.heroName': { $all: heroNames }
+  }).toArray();
+
+  return teams;
+}

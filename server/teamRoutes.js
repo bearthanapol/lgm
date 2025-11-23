@@ -4,7 +4,9 @@ const router = express.Router();
 const { processScreenshotAndMatch } = require('./imageMatching');
 const { processScreenshotWithOCR } = require('./heroRecognitionOCR');
 const { getAllHeroes } = require('./heroModel');
-const { saveUserTeam, getUserTeam, getHeroStatistics } = require('./userTeamModel');
+const { saveUserTeam, getUserTeam, getHeroStatistics, searchTeamsByHeroes } = require('./userTeamModel');
+
+
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -42,11 +44,11 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
     }
 
     console.log(`Processing screenshot for user: ${username}`);
-    
+
     // Get all heroes from database
     const heroDatabase = await getAllHeroes();
     console.log(`Loaded ${heroDatabase.length} heroes from database`);
-    
+
     if (heroDatabase.length === 0) {
       return res.status(400).json({
         success: false,
@@ -56,9 +58,9 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
 
     // Check if user wants to use OCR method (default: true)
     const useOCR = req.body.useOCR !== 'false'; // Default to OCR method
-    
+
     let matchedHeroes;
-    
+
     if (useOCR) {
       console.log('Using OCR-based recognition...');
       // Process screenshot with OCR (new method)
@@ -105,7 +107,7 @@ router.post('/upload', upload.single('screenshot'), async (req, res) => {
 router.post('/save', async (req, res) => {
   try {
     const { heroes, username } = req.body;
-    
+
     if (!heroes || !Array.isArray(heroes)) {
       return res.status(400).json({
         success: false,
@@ -115,15 +117,16 @@ router.post('/save', async (req, res) => {
 
     // Use a default username if not provided (for testing)
     const user = username || 'test_user';
-    
+
     console.log(`Saving ${heroes.length} heroes for user: ${user}`);
-    
+
     // Transform the hero data to match the expected format
     const formattedHeroes = heroes.map((hero, index) => ({
       position: index + 1,
       heroName: hero.heroName || hero.name || 'Unknown',
       starLevel: hero.starLevel || 0,
-      rarity: hero.rarity || 'Unknown'
+      rarity: hero.rarity || 'Unknown',
+      ring: hero.ring || ''
     }));
 
     // Save to user's team
@@ -148,12 +151,33 @@ router.post('/save', async (req, res) => {
 });
 
 /**
+ * GET /api/team/stats/heroes - Get hero statistics
+ * Must be defined BEFORE /:username to avoid conflict
+ */
+router.get('/stats/heroes', async (req, res) => {
+  try {
+    const stats = await getHeroStatistics();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Error fetching hero statistics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch statistics'
+    });
+  }
+});
+
+/**
  * GET /api/team/:username - Get user's team
  */
 router.get('/:username', async (req, res) => {
   try {
     const team = await getUserTeam(req.params.username);
-    
+
     if (!team) {
       return res.status(404).json({
         success: false,
@@ -175,21 +199,31 @@ router.get('/:username', async (req, res) => {
 });
 
 /**
- * GET /api/team/stats/heroes - Get hero statistics
+ * POST /api/team/search - Search for users with specific heroes
  */
-router.get('/stats/heroes', async (req, res) => {
+router.post('/search', async (req, res) => {
   try {
-    const stats = await getHeroStatistics();
-    
+    const { heroes } = req.body;
+
+    if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Heroes array is required'
+      });
+    }
+
+    const { searchTeamsByHeroes } = require('./userTeamModel');
+    const teams = await searchTeamsByHeroes(heroes);
+
     res.json({
       success: true,
-      data: stats
+      data: teams
     });
   } catch (error) {
-    console.error('Error fetching hero statistics:', error);
+    console.error('Error searching teams:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch statistics'
+      error: 'Failed to search teams'
     });
   }
 });
