@@ -308,7 +308,7 @@ router.post('/search', async (req, res) => {
  */
 router.post('/selection', async (req, res) => {
   try {
-    const { username, targetUsername, targetHeroes } = req.body;
+    const { username, targetUsername, targetHeroes, heroDetails, enemyZone, enemyTeamNumber } = req.body;
 
     if (!username || !targetUsername) {
       return res.status(400).json({
@@ -319,7 +319,10 @@ router.post('/selection', async (req, res) => {
 
     await guildWarModel.saveGuildWarSelection(username, {
       targetUsername,
-      targetHeroes
+      targetHeroes,
+      heroDetails: heroDetails || [],
+      enemyZone: enemyZone || 'Unknown Zone',
+      enemyTeamNumber: enemyTeamNumber || 0
     });
 
     res.json({ success: true });

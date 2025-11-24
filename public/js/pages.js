@@ -2309,10 +2309,37 @@ async function toggleTeamSpeedType(teamId) {
   }
 }
 
+/**
+ * Get zone name from team number
+ */
+function getZoneFromTeamNumber(teamNumber) {
+  // Convert to number in case it's a string
+  const num = parseInt(teamNumber);
+  
+  if (isNaN(num)) {
+    console.error('Invalid team number:', teamNumber);
+    return 'Unknown Zone';
+  }
+  
+  if (num >= 1 && num <= 10) return 'Outer Bailey 1';
+  if (num >= 11 && num <= 20) return 'Outer Bailey 2';
+  if (num >= 21 && num <= 30) return 'Outer Bailey 3';
+  if (num >= 31 && num <= 40) return 'Outer Bailey 4';
+  if (num >= 41 && num <= 50) return 'Outer Bailey 5';
+  if (num >= 51 && num <= 65) return 'Inner Citadel 1';
+  if (num >= 66 && num <= 80) return 'Inner Citadel 2';
+  if (num >= 81 && num <= 95) return 'Inner Citadel 3';
+  if (num >= 96 && num <= 115) return 'Main Castle';
+  
+  console.warn('Team number out of range:', num);
+  return 'Unknown Zone';
+}
+
 // Find Team Modal State
 let findTeamState = {
   teamNumber: null,
   teamId: null,
+  zoneName: null,
   selectedHeroes: [null, null, null] // Array of 3 hero objects
 };
 
@@ -2320,21 +2347,34 @@ let findTeamState = {
  * Open Find Team Modal
  */
 function openFindTeamModal(teamNumber, teamId) {
+  console.log('Opening Find Team Modal:', { teamNumber, teamId, type: typeof teamNumber });
+  
+  // Ensure teamNumber is a number
+  const numTeamNumber = parseInt(teamNumber);
+  
   findTeamState = {
-    teamNumber,
+    teamNumber: numTeamNumber,
     teamId,
+    zoneName: getZoneFromTeamNumber(numTeamNumber),
     selectedHeroes: [null, null, null]
   };
+  
+  console.log('Find Team State set to:', findTeamState);
 
   // Reset UI
   for (let i = 0; i < 3; i++) {
     const slot = document.getElementById(`find-team-slot-${i}`);
-    slot.innerHTML = `<span style="color: #666;">+ Hero ${i + 1}</span>`;
-    slot.style.border = '2px dashed #666';
+    if (slot) {
+      slot.innerHTML = `<span style="color: #666;">+ Hero ${i + 1}</span>`;
+      slot.style.border = '2px dashed #666';
+    }
   }
 
-  document.getElementById('find-team-results').style.display = 'none';
-  document.getElementById('find-team-modal').style.display = 'block';
+  const resultsDiv = document.getElementById('find-team-results');
+  const modalDiv = document.getElementById('find-team-modal');
+  
+  if (resultsDiv) resultsDiv.style.display = 'none';
+  if (modalDiv) modalDiv.style.display = 'block';
 }
 
 /**
@@ -2465,15 +2505,20 @@ async function searchForTeam() {
       return;
     }
 
-    listDiv.innerHTML = teams.map(team => {
+    listDiv.innerHTML = teams.map((team, index) => {
       // Get user's IGN if available, otherwise use username
       const displayName = team.username; // You can add IGN support later if needed
+      const matchedHeroes = team.heroes.filter(h => heroNames.includes(h.heroName));
+      
+      // Store hero details in a global variable to avoid JSON.stringify issues
+      if (!window.guildWarTeamData) window.guildWarTeamData = {};
+      window.guildWarTeamData[`team_${index}`] = matchedHeroes;
 
       return `
         <div style="background: #1a1a1a; padding: 15px; border-radius: 4px; border: 1px solid #333;">
           <div style="color: var(--color-orange); font-weight: bold; font-size: 16px; margin-bottom: 8px;">${displayName}</div>
           <div style="color: #ccc; font-size: 13px; margin-bottom: 10px;">Has:</div>
-          ${team.heroes.filter(h => heroNames.includes(h.heroName)).map(h => {
+          ${matchedHeroes.map(h => {
         const heroName = h.heroName || 'Unknown';
         const starLevel = h.starLevel || 0;
         const ring = h.ring || 'No Ring';
@@ -2488,7 +2533,7 @@ async function searchForTeam() {
               </div>
             `;
       }).join('')}
-          <button onclick="pickGuildWarTeam('${team.username}', '${heroNames.join(',')}', ${JSON.stringify(team.heroes.filter(h => heroNames.includes(h.heroName)))})" 
+          <button onclick="pickGuildWarTeam('${team.username}', '${heroNames.join(',')}', 'team_${index}')" 
                   style="margin-top: 10px; background: var(--color-orange); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; width: 100%;">
             Pick This Team
           </button>
@@ -2505,7 +2550,7 @@ async function searchForTeam() {
 /**
  * Pick a team for Guild War
  */
-async function pickGuildWarTeam(targetUsername, heroNamesStr, heroDetails = []) {
+async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
   let username = null;
   const userInfo = localStorage.getItem('lgm_user_info');
   if (userInfo) {
@@ -2522,6 +2567,15 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, heroDetails = []) 
   }
 
   const targetHeroes = heroNamesStr.split(',');
+  
+  // Get hero details from stored data
+  const heroDetails = (window.guildWarTeamData && window.guildWarTeamData[teamDataKey]) || [];
+
+  // Get enemy team info from findTeamState
+  console.log('Current findTeamState:', findTeamState);
+  const enemyZone = findTeamState.zoneName || 'Unknown Zone';
+  const enemyTeamNumber = findTeamState.teamNumber || 0;
+  console.log('Enemy info:', { enemyZone, enemyTeamNumber });
 
   try {
     const response = await fetch('/api/guildwar/selection', {
@@ -2531,19 +2585,24 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, heroDetails = []) 
         username,
         targetUsername,
         targetHeroes,
-        heroDetails // Include full hero details with star and ring info
+        heroDetails, // Include full hero details with star and ring info
+        enemyZone,
+        enemyTeamNumber
       })
     });
 
-    if (response.ok) {
-      alert(`Picked ${targetUsername} for Guild War! Check 'GWar Noti' in My Team.`);
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      alert(`Picked ${targetUsername} to fight ${enemyZone}, Team ${enemyTeamNumber}!\nCheck 'GWar Noti' in My Team.`);
       closeFindTeamModal();
     } else {
-      alert('Failed to pick team');
+      console.error('Failed to pick team:', data);
+      alert('Failed to pick team: ' + (data.error || 'Unknown error'));
     }
   } catch (error) {
     console.error('Error picking team:', error);
-    alert('Error picking team');
+    alert('Error picking team: ' + error.message);
   }
 }
 
@@ -2604,16 +2663,29 @@ async function loadGWarNoti() {
       const targetHeroes = selection.targetHeroes || [];
       const heroDetails = selection.heroDetails || [];
 
+      const enemyZone = selection.enemyZone || 'Unknown Zone';
+      const enemyTeamNumber = selection.enemyTeamNumber || '?';
+
       contentDiv.innerHTML = `
         <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 2px solid var(--color-orange); max-width: 600px; margin: 0 auto;">
           <h2 style="color: var(--color-orange); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">Current Target</h2>
           
+          <div style="margin-top: 20px; background: #2a2a2a; padding: 15px; border-radius: 6px; border-left: 4px solid #ff6600;">
+            <div style="font-size: 16px; color: #4FC3F7; margin-bottom: 8px; font-weight: bold;">🎯 Enemy Team</div>
+            <div style="font-size: 18px; color: white; margin-bottom: 5px;">
+              <span style="color: var(--color-orange); font-weight: bold;">${enemyZone}</span>, Team <span style="color: var(--color-orange); font-weight: bold;">${enemyTeamNumber}</span>
+            </div>
+          </div>
+          
           <div style="margin-top: 20px;">
-            <div style="font-size: 18px; color: white; margin-bottom: 5px;">Player: <span style="color: var(--color-orange); font-weight: bold;">${selection.targetUsername}</span></div>
+            <div style="font-size: 16px; color: #4FC3F7; margin-bottom: 8px; font-weight: bold;">👤 Target Player</div>
+            <div style="font-size: 18px; color: white; margin-bottom: 5px;">
+              <span style="color: var(--color-orange); font-weight: bold;">${selection.targetUsername}</span>
+            </div>
             <div style="color: #888; font-size: 12px;">Selected on: ${new Date(selection.updatedAt).toLocaleString()}</div>
           </div>
           
-          <h3 style="color: white; margin-top: 25px; font-size: 16px;">Target Heroes:</h3>
+          <h3 style="color: white; margin-top: 25px; font-size: 16px;">⚔️ Target Heroes:</h3>
           <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
             ${heroDetails.length > 0 ? heroDetails.map(hero => {
         const heroName = hero.heroName || 'Unknown';
