@@ -44,7 +44,8 @@ async function createEnemyTeam(teamData) {
     heroPicture: hero.heroPicture, // GitHub URL
     skills: hero.skills || [], // Array of 2 skills with order [1,2,3] or not set
     ring: hero.ring || '', // Ring image from GitHub
-    order: hero.order || null // 1, 2, 3, or null (not set)
+    order: hero.order || null, // 1, 2, 3, or null (not set)
+    starLevel: hero.starLevel || 0 // Star level 0-12
   }));
 
   const result = await db.collection(COLLECTION_NAME).insertOne(team);
@@ -138,7 +139,8 @@ async function addHeroToEnemyTeam(teamId, heroData) {
     heroPicture: heroData.heroPicture,
     skills: heroData.skills || [],
     ring: heroData.ring || '',
-    order: heroData.order || null
+    order: heroData.order || null,
+    starLevel: heroData.starLevel || 0
   };
 
   const result = await db.collection(COLLECTION_NAME).updateOne(
@@ -182,6 +184,7 @@ async function updateHeroInEnemyTeam(teamId, heroname, updateData) {
         'heroes.$.skills': updateData.skills,
         'heroes.$.ring': updateData.ring,
         'heroes.$.order': updateData.order,
+        'heroes.$.starLevel': updateData.starLevel !== undefined ? updateData.starLevel : 0,
         updatedAt: new Date()
       }
     }
@@ -222,10 +225,16 @@ module.exports = {
   deleteEnemyTeam,
   getTeamsByOrder,
   saveGuildWarSelection,
-  getGuildWarSelection
+  getGuildWarSelection,
+  saveBattleHistory,
+  getBattleHistory,
+  updateBattleResult,
+  updateBattleSpeed,
+  getAllBattleHistory
 };
 
 const SELECTION_COLLECTION = 'guildWar_selections';
+const BATTLE_HISTORY_COLLECTION = 'guildWar_battleHistory';
 
 /**
  * Save Guild War selection for a user
@@ -247,4 +256,79 @@ async function saveGuildWarSelection(username, selectionData) {
 async function getGuildWarSelection(username) {
   const db = getDatabase();
   return await db.collection(SELECTION_COLLECTION).findOne({ username });
+}
+
+/**
+ * Save battle history (when user picks a team to fight)
+ */
+async function saveBattleHistory(battleData) {
+  const db = getDatabase();
+  const battle = {
+    username: battleData.username,
+    enemyTeamNumber: battleData.enemyTeamNumber,
+    enemyZone: battleData.enemyZone,
+    targetUsername: battleData.targetUsername,
+    targetHeroes: battleData.targetHeroes || [],
+    heroDetails: battleData.heroDetails || [],
+    result: 'pending', // 'pending', 'victory', 'defeat'
+    battleDate: new Date()
+  };
+  
+  const result = await db.collection(BATTLE_HISTORY_COLLECTION).insertOne(battle);
+  return result;
+}
+
+/**
+ * Get battle history for a user and specific enemy team
+ */
+async function getBattleHistory(username, enemyTeamNumber) {
+  const db = getDatabase();
+  return await db.collection(BATTLE_HISTORY_COLLECTION)
+    .find({ username, enemyTeamNumber })
+    .sort({ battleDate: -1 }) // Most recent first
+    .toArray();
+}
+
+/**
+ * Update battle result (victory or defeat)
+ */
+async function updateBattleResult(battleId, result) {
+  const db = getDatabase();
+  const validResults = ['pending', 'victory', 'defeat'];
+  
+  if (!validResults.includes(result)) {
+    throw new Error('Invalid result. Must be: pending, victory, or defeat');
+  }
+  
+  const resultUpdate = await db.collection(BATTLE_HISTORY_COLLECTION).updateOne(
+    { _id: new ObjectId(battleId) },
+    { $set: { result, updatedAt: new Date() } }
+  );
+  
+  return resultUpdate;
+}
+
+/**
+ * Update battle speed
+ */
+async function updateBattleSpeed(battleId, speed) {
+  const db = getDatabase();
+  
+  const speedUpdate = await db.collection(BATTLE_HISTORY_COLLECTION).updateOne(
+    { _id: new ObjectId(battleId) },
+    { $set: { speed, updatedAt: new Date() } }
+  );
+  
+  return speedUpdate;
+}
+
+/**
+ * Get all battle history for a user (across all enemy teams)
+ */
+async function getAllBattleHistory(username) {
+  const db = getDatabase();
+  return await db.collection(BATTLE_HISTORY_COLLECTION)
+    .find({ username })
+    .sort({ battleDate: -1 })
+    .toArray();
 }

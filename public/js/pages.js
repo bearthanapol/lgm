@@ -262,10 +262,18 @@ function renderGuildWarPage() {
 
       <!-- Find Team Modal -->
       <div id="find-team-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
-        <div style="max-width: 800px; margin: 50px auto; background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px;">
+        <div style="max-width: 900px; margin: 50px auto; background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="color: var(--color-orange); margin: 0;">Find Team to Fight</h2>
             <button onclick="closeFindTeamModal()" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+          </div>
+          
+          <!-- Previous Battles Section -->
+          <div id="battle-history-section" style="margin-bottom: 25px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px solid #333;">
+            <h3 style="color: #4FC3F7; margin: 0 0 15px 0; font-size: 16px;">📜 Previous Battles</h3>
+            <div id="battle-history-list">
+              <p style="color: #888; text-align: center;">Loading battle history...</p>
+            </div>
           </div>
           
           <div style="margin-bottom: 20px;">
@@ -669,7 +677,6 @@ async function loadUserTeamFromPages() {
           `;
         }).join('');
 
-
         // Attach star click handlers after rendering
         attachTeamStarHandlers();
       }
@@ -771,8 +778,6 @@ function cycleTeamStarLevel(position) {
 
   // Save to database
   saveTeamStarLevel(position, nextLevel);
-
-  console.log(`Position ${position}: Level ${currentLevel} → ${nextLevel}`);
 }
 
 /**
@@ -878,9 +883,7 @@ async function saveTeamStarLevel(position, level) {
 
     const saveData = await saveResponse.json();
 
-    if (saveData.success) {
-      console.log(`Saved star level ${level} for position ${position}`);
-    } else {
+    if (!saveData.success) {
       console.error('Failed to save star level:', saveData.error);
     }
   } catch (error) {
@@ -1009,7 +1012,7 @@ async function saveHeroEdit(position) {
         }, 2000);
       }
 
-      console.log(`Saved hero at position ${position}: ${newHeroName} (${currentLevel} stars)`);
+
     } else {
       alert('Failed to save: ' + (saveData.error || 'Unknown error'));
       console.error('Failed to save hero edit:', saveData.error);
@@ -1454,6 +1457,11 @@ function renderGuildWarTeams(teams) {
   // Show content, hide loading
   document.getElementById('guild-war-loading').style.display = 'none';
   document.getElementById('guild-war-content').style.display = 'block';
+  
+  // Attach star click handlers after rendering
+  setTimeout(() => {
+    attachGuildWarStarHandlers();
+  }, 100);
 }
 
 /**
@@ -1566,6 +1574,11 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
       `<img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; border: 1px solid var(--color-orange);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23333%22 width=%2240%22 height=%2240%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%228%22%3ENo%3C/text%3E%3C/svg%3E'">` :
       `<div style="width: 40px; height: 40px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border: 1px solid var(--color-orange); margin: 0 auto;">No Img</div>`
     }
+      </div>
+      
+      <!-- Star Level (Colored Stars) -->
+      <div class="guild-war-star-rating" id="gw-stars-${teamNumber}-${slotIndex}" style="display: flex; justify-content: center; gap: 1px; margin-bottom: 2px; pointer-events: auto;">
+        ${createGuildWarStarRating(teamNumber, teamId, hero.heroname, slotIndex, hero.starLevel || 0)}
       </div>
       
       <!-- Hero Name -->
@@ -2174,6 +2187,165 @@ async function cycleSkillNumber(teamNumber, teamId, heroname, skillIndex, direct
 }
 
 /**
+ * Create star rating HTML for Guild War
+ */
+function createGuildWarStarRating(teamNumber, teamId, heroname, slotIndex, initialLevel) {
+  let html = '';
+
+  // Calculate star colors based on level
+  let redCount = 0;
+  let blueCount = 0;
+  let yellowCount = 6;
+
+  if (initialLevel === 0) {
+    yellowCount = 6;
+  } else if (initialLevel <= 6) {
+    blueCount = initialLevel;
+    yellowCount = 6 - initialLevel;
+  } else {
+    redCount = initialLevel - 6;
+    blueCount = 6 - redCount;
+    yellowCount = 0;
+  }
+
+  // Create stars with appropriate colors
+  for (let i = 0; i < 6; i++) {
+    let colorClass = 'yellow';
+    if (i < redCount) {
+      colorClass = 'red';
+    } else if (i < redCount + blueCount) {
+      colorClass = 'blue';
+    }
+
+    html += `<span class="guild-war-star ${colorClass}" data-team="${teamNumber}" data-teamid="${teamId}" data-heroname="${heroname}" data-slot="${slotIndex}" data-index="${i}" style="cursor: pointer; font-size: 10px;">★</span>`;
+  }
+
+  return html;
+}
+
+/**
+ * Attach click handlers to Guild War stars
+ */
+function attachGuildWarStarHandlers() {
+  document.querySelectorAll('.guild-war-star').forEach(star => {
+    star.addEventListener('click', function () {
+      const teamNumber = parseInt(this.dataset.team);
+      const teamId = this.dataset.teamid;
+      const heroname = this.dataset.heroname;
+      const slotIndex = parseInt(this.dataset.slot);
+      cycleGuildWarStarLevel(teamNumber, teamId, heroname, slotIndex);
+    });
+  });
+}
+
+/**
+ * Cycle through star levels for Guild War (0 → 1 → 2 → ... → 12 → 0)
+ */
+async function cycleGuildWarStarLevel(teamNumber, teamId, heroname, slotIndex) {
+  const stars = document.querySelectorAll(`#gw-stars-${teamNumber}-${slotIndex} .guild-war-star`);
+
+  // Get current level from star colors
+  let currentLevel = 0;
+  let redCount = 0;
+  let blueCount = 0;
+
+  stars.forEach(star => {
+    if (star.classList.contains('red')) redCount++;
+    else if (star.classList.contains('blue')) blueCount++;
+  });
+
+  // Calculate current level
+  if (redCount > 0) {
+    currentLevel = 6 + redCount;
+  } else if (blueCount > 0) {
+    currentLevel = blueCount;
+  } else {
+    currentLevel = 0;
+  }
+
+  // Cycle to next level (0 → 1 → 2 → ... → 12 → 0)
+  let nextLevel = (currentLevel + 1) % 13;
+
+  // Apply new level visually
+  setGuildWarStarLevel(teamNumber, slotIndex, nextLevel);
+
+  // Save to database
+  await saveGuildWarStarLevel(teamId, heroname, nextLevel);
+}
+
+/**
+ * Set star level visually for Guild War
+ */
+function setGuildWarStarLevel(teamNumber, slotIndex, level) {
+  const stars = document.querySelectorAll(`#gw-stars-${teamNumber}-${slotIndex} .guild-war-star`);
+
+  if (stars.length === 0) return;
+
+  // Calculate star colors based on level
+  let redCount = 0;
+  let blueCount = 0;
+
+  if (level === 0) {
+    // All yellow
+  } else if (level <= 6) {
+    blueCount = level;
+  } else {
+    redCount = level - 6;
+    blueCount = 6 - redCount;
+  }
+
+  // Apply colors to stars
+  stars.forEach((star, index) => {
+    star.classList.remove('yellow', 'blue', 'red');
+    
+    if (index < redCount) {
+      star.classList.add('red');
+    } else if (index < redCount + blueCount) {
+      star.classList.add('blue');
+    } else {
+      star.classList.add('yellow');
+    }
+  });
+}
+
+/**
+ * Save star level to database for Guild War
+ */
+async function saveGuildWarStarLevel(teamId, heroname, starLevel) {
+  try {
+    // Get current hero data
+    const response = await fetch(`/api/guildwar/${teamId}`);
+    if (!response.ok) return;
+    
+    const teamData = await response.json();
+    const hero = teamData.data.heroes.find(h => h.heroname === heroname);
+    
+    if (!hero) return;
+    
+    // Update hero with new star level
+    const updateResponse = await fetch(`/api/guildwar/${teamId}/heroes/${heroname}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skills: hero.skills,
+        ring: hero.ring,
+        order: hero.order,
+        starLevel: starLevel
+      })
+    });
+    
+    if (!updateResponse.ok) return;
+    
+    const data = await updateResponse.json();
+    if (!data.success) {
+      console.error('Failed to update star level:', data.error);
+    }
+  } catch (error) {
+    console.error('Error saving star level:', error);
+  }
+}
+
+/**
  * Open ring selector modal
  */
 async function openRingSelector(teamNumber, teamId, heroname) {
@@ -2223,7 +2395,8 @@ async function openRingSelector(teamNumber, teamId, heroname) {
       body: JSON.stringify({
         skills: hero.skills,
         ring: selectedRing.url,
-        order: hero.order
+        order: hero.order,
+        starLevel: hero.starLevel || 0
       })
     });
 
@@ -2313,13 +2486,9 @@ async function toggleTeamSpeedType(teamId) {
  * Get zone name from team number
  */
 function getZoneFromTeamNumber(teamNumber) {
-  // Convert to number in case it's a string
   const num = parseInt(teamNumber);
   
-  if (isNaN(num)) {
-    console.error('Invalid team number:', teamNumber);
-    return 'Unknown Zone';
-  }
+  if (isNaN(num)) return 'Unknown Zone';
   
   if (num >= 1 && num <= 10) return 'Outer Bailey 1';
   if (num >= 11 && num <= 20) return 'Outer Bailey 2';
@@ -2331,7 +2500,6 @@ function getZoneFromTeamNumber(teamNumber) {
   if (num >= 81 && num <= 95) return 'Inner Citadel 3';
   if (num >= 96 && num <= 115) return 'Main Castle';
   
-  console.warn('Team number out of range:', num);
   return 'Unknown Zone';
 }
 
@@ -2347,8 +2515,6 @@ let findTeamState = {
  * Open Find Team Modal
  */
 function openFindTeamModal(teamNumber, teamId) {
-  console.log('Opening Find Team Modal:', { teamNumber, teamId, type: typeof teamNumber });
-  
   // Ensure teamNumber is a number
   const numTeamNumber = parseInt(teamNumber);
   
@@ -2358,8 +2524,6 @@ function openFindTeamModal(teamNumber, teamId) {
     zoneName: getZoneFromTeamNumber(numTeamNumber),
     selectedHeroes: [null, null, null]
   };
-  
-  console.log('Find Team State set to:', findTeamState);
 
   // Reset UI
   for (let i = 0; i < 3; i++) {
@@ -2375,6 +2539,192 @@ function openFindTeamModal(teamNumber, teamId) {
   
   if (resultsDiv) resultsDiv.style.display = 'none';
   if (modalDiv) modalDiv.style.display = 'block';
+  
+  // Load battle history for this enemy team
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (userInfo) {
+    try {
+      const username = JSON.parse(userInfo).username;
+      loadBattleHistory(username, numTeamNumber);
+    } catch (e) {
+      console.error('Error loading battle history:', e);
+    }
+  }
+}
+
+/**
+ * Load battle history for a specific enemy team
+ */
+async function loadBattleHistory(username, enemyTeamNumber) {
+  const historyList = document.getElementById('battle-history-list');
+  
+  if (!historyList) return;
+  
+  historyList.innerHTML = '<p style="color: #888; text-align: center;">Loading...</p>';
+  
+  try {
+    const response = await fetch(`/api/guildwar/battle-history/${username}/${enemyTeamNumber}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error);
+    }
+    
+    const battles = data.data || [];
+    
+    if (battles.length === 0) {
+      historyList.innerHTML = '<p style="color: #888; text-align: center; font-size: 13px;">No previous battles for this enemy team.</p>';
+      return;
+    }
+    
+    historyList.innerHTML = battles.map(battle => {
+      const resultIcon = battle.result === 'victory' ? '✅' : battle.result === 'defeat' ? '❌' : '⏳';
+      const resultColor = battle.result === 'victory' ? '#4CAF50' : battle.result === 'defeat' ? '#f44336' : '#888';
+      const resultText = battle.result === 'victory' ? 'Victory' : battle.result === 'defeat' ? 'Defeat' : 'Pending';
+      const battleDate = new Date(battle.battleDate).toLocaleDateString();
+      const speedValue = battle.speed || '';
+      
+      return `
+        <div style="background: #2a2a2a; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid ${resultColor};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="flex: 1;">
+              <span style="color: var(--color-orange); font-weight: bold; font-size: 14px;">${battle.targetUsername}</span>
+              <span style="color: #888; font-size: 12px; margin-left: 10px;">${battleDate}</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #4CAF50;">
+                <input type="radio" name="result_${battle._id}" value="victory" ${battle.result === 'victory' ? 'checked' : ''} 
+                       onchange="updateBattleResult('${battle._id}', 'victory', ${battle.enemyTeamNumber})" 
+                       style="margin-right: 4px;">
+                ✅ Win
+              </label>
+              <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #f44336;">
+                <input type="radio" name="result_${battle._id}" value="defeat" ${battle.result === 'defeat' ? 'checked' : ''} 
+                       onchange="updateBattleResult('${battle._id}', 'defeat', ${battle.enemyTeamNumber})" 
+                       style="margin-right: 4px;">
+                ❌ Loss
+              </label>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+            <label style="color: #4FC3F7; font-size: 12px; font-weight: bold;">⚡ Speed:</label>
+            <input 
+              type="text" 
+              id="speed_${battle._id}" 
+              value="${speedValue}" 
+              placeholder="e.g., 245.5"
+              onblur="updateBattleSpeed('${battle._id}', this.value)"
+              style="flex: 1; padding: 4px 8px; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; color: white; font-size: 12px; max-width: 120px;"
+            />
+          </div>
+          <div style="color: #aaa; font-size: 12px;">
+            ${(battle.heroDetails || []).map(h => h.heroName).join(', ') || battle.targetHeroes.join(', ')}
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error('Error loading battle history:', error);
+    historyList.innerHTML = `<p style="color: #d32f2f; text-align: center; font-size: 13px;">Error: ${error.message}</p>`;
+  }
+}
+
+/**
+ * Update battle result (victory or defeat)
+ */
+async function updateBattleResult(battleId, result, enemyTeamNumber) {
+  try {
+    const response = await fetch(`/api/guildwar/battle-history/${battleId}/result`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ result })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      alert('Failed to update result: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    
+    // If victory, ask if user wants to mark enemy team as defeated
+    if (result === 'victory' && enemyTeamNumber) {
+      const markAsDefeated = confirm(
+        `🎉 Victory recorded!\n\nDo you want to mark Enemy Team ${enemyTeamNumber} as DEFEATED?\n\n` +
+        `This will show a checkmark on the team box in Guild War page.`
+      );
+      
+      if (markAsDefeated) {
+        await markEnemyTeamAsDefeated(enemyTeamNumber);
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error updating battle result:', error);
+    alert('Error updating result: ' + error.message);
+  }
+}
+
+/**
+ * Update battle speed
+ */
+async function updateBattleSpeed(battleId, speed) {
+  try {
+    const response = await fetch(`/api/guildwar/battle-history/${battleId}/speed`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speed })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok || !data.success) {
+      return;
+    }
+    
+  } catch (error) {
+    console.error('Error updating battle speed:', error);
+  }
+}
+
+/**
+ * Mark enemy team as defeated
+ */
+async function markEnemyTeamAsDefeated(teamNumber) {
+  try {
+    // Find the team ID from the loaded teams
+    const team = window.allGuildWarTeams?.find(t => t.teamNumber === teamNumber);
+    
+    if (!team || !team._id) {
+      alert('Could not find enemy team to mark as defeated');
+      return;
+    }
+    
+    const response = await fetch(`/api/guildwar/${team._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isDefeated: true })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      alert(`✅ Enemy Team ${teamNumber} marked as DEFEATED!`);
+      
+      // Reload guild war teams to show the checkmark
+      if (typeof loadGuildWarTeams === 'function') {
+        loadGuildWarTeams();
+      }
+    } else {
+      console.error('Failed to mark as defeated:', data);
+      alert('Failed to mark team as defeated: ' + (data.error || 'Unknown error'));
+    }
+    
+  } catch (error) {
+    console.error('Error marking team as defeated:', error);
+    alert('Error marking team as defeated: ' + error.message);
+  }
 }
 
 /**
@@ -2572,33 +2922,59 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
   const heroDetails = (window.guildWarTeamData && window.guildWarTeamData[teamDataKey]) || [];
 
   // Get enemy team info from findTeamState
-  console.log('Current findTeamState:', findTeamState);
   const enemyZone = findTeamState.zoneName || 'Unknown Zone';
   const enemyTeamNumber = findTeamState.teamNumber || 0;
-  console.log('Enemy info:', { enemyZone, enemyTeamNumber });
 
   try {
-    const response = await fetch('/api/guildwar/selection', {
+    // Save to current selection
+    const selectionResponse = await fetch('/api/guildwar/selection', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         username,
         targetUsername,
         targetHeroes,
-        heroDetails, // Include full hero details with star and ring info
+        heroDetails,
         enemyZone,
         enemyTeamNumber
       })
     });
 
-    const data = await response.json();
+    const selectionData = await selectionResponse.json();
 
-    if (response.ok && data.success) {
+    if (!selectionResponse.ok || !selectionData.success) {
+      console.error('Failed to save selection:', selectionData);
+      alert('Failed to pick team: ' + (selectionData.error || 'Unknown error'));
+      return;
+    }
+
+    // Save to battle history
+    const historyResponse = await fetch('/api/guildwar/battle-history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        targetUsername,
+        targetHeroes,
+        heroDetails,
+        enemyZone,
+        enemyTeamNumber
+      })
+    });
+
+    const historyData = await historyResponse.json();
+    
+    if (historyResponse.ok && historyData.success) {
       alert(`Picked ${targetUsername} to fight ${enemyZone}, Team ${enemyTeamNumber}!\nCheck 'GWar Noti' in My Team.`);
       closeFindTeamModal();
+      
+      // Reload battle history if modal is still open
+      if (findTeamState.teamNumber) {
+        loadBattleHistory(username, findTeamState.teamNumber);
+      }
     } else {
-      console.error('Failed to pick team:', data);
-      alert('Failed to pick team: ' + (data.error || 'Unknown error'));
+      console.error('Failed to save battle history:', historyData);
+      alert('Team picked but failed to save history: ' + (historyData.error || 'Unknown error'));
     }
   } catch (error) {
     console.error('Error picking team:', error);

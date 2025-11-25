@@ -356,4 +356,128 @@ router.get('/selection/:username', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/guildwar/battle-history - Save battle history
+ */
+router.post('/battle-history', async (req, res) => {
+  try {
+    const battleData = req.body;
+    
+    if (!battleData.username || !battleData.enemyTeamNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username and enemy team number are required'
+      });
+    }
+    
+    const result = await guildWarModel.saveBattleHistory(battleData);
+    
+    res.json({
+      success: true,
+      data: { battleId: result.insertedId }
+    });
+  } catch (error) {
+    console.error('Error saving battle history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to save battle history'
+    });
+  }
+});
+
+/**
+ * GET /api/guildwar/battle-history/:username/:enemyTeamNumber - Get battle history for specific enemy
+ */
+router.get('/battle-history/:username/:enemyTeamNumber', async (req, res) => {
+  try {
+    const { username, enemyTeamNumber } = req.params;
+    const history = await guildWarModel.getBattleHistory(username, parseInt(enemyTeamNumber));
+    
+    res.json({
+      success: true,
+      data: history
+    });
+  } catch (error) {
+    console.error('Error fetching battle history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch battle history'
+    });
+  }
+});
+
+/**
+ * PUT /api/guildwar/battle-history/:battleId/result - Update battle result
+ */
+router.put('/battle-history/:battleId/result', async (req, res) => {
+  try {
+    const { battleId } = req.params;
+    const { result } = req.body;
+    
+    if (!result) {
+      return res.status(400).json({
+        success: false,
+        error: 'Result is required (pending, victory, or defeat)'
+      });
+    }
+    
+    await guildWarModel.updateBattleResult(battleId, result);
+    
+    res.json({
+      success: true,
+      message: 'Battle result updated'
+    });
+  } catch (error) {
+    console.error('Error updating battle result:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update battle result'
+    });
+  }
+});
+
+/**
+ * PUT /api/guildwar/battle-history/:battleId/speed - Update battle speed
+ */
+router.put('/battle-history/:battleId/speed', async (req, res) => {
+  try {
+    const { battleId } = req.params;
+    const { speed } = req.body;
+    
+    await guildWarModel.updateBattleSpeed(battleId, speed);
+    
+    res.json({
+      success: true,
+      message: 'Battle speed updated'
+    });
+  } catch (error) {
+    console.error('Error updating battle speed:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update battle speed'
+    });
+  }
+});
+
+/**
+ * GET /api/guildwar/battle-history/:username - Get all battle history for user
+ */
+router.get('/battle-history/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const history = await guildWarModel.getAllBattleHistory(username);
+    
+    res.json({
+      success: true,
+      data: history
+    });
+  } catch (error) {
+    console.error('Error fetching all battle history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch battle history'
+    });
+  }
+});
+
 module.exports = router;
