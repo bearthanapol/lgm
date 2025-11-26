@@ -227,48 +227,33 @@ async function loadHeroes() {
     const result = await response.json();
 
     if (result.success && result.data.length > 0) {
-      // Group heroes by name
-      const groupedHeroes = {};
-      result.data.forEach(hero => {
+      // Simple grid layout - show all heroes
+      const heroesHTML = result.data.map(hero => {
         const heroName = hero.name || hero.heroname;
-        if (!groupedHeroes[heroName]) {
-          groupedHeroes[heroName] = [];
-        }
-        groupedHeroes[heroName].push(hero);
-      });
-
-      // Generate HTML for grouped heroes
-      const heroesHTML = Object.entries(groupedHeroes).map(([heroName, skins]) => {
-        const firstHero = skins[0];
-        const skinsHTML = skins.map(hero => {
-          const imageUrl = hero.imageUrl || hero.heroPicture;
-          const cacheBuster = `?t=${Date.now()}`;
-          return `
-          <div style="text-align: center;">
-            ${imageUrl ?
-              `<img src="${imageUrl}${cacheBuster}" alt="${heroName}" style="width: 180px; height: 180px; object-fit: contain; border-radius: 4px; border: 2px solid #ddd; display: block; margin-bottom: 8px; background-color: #f9f9f9;">` :
-              '<div style="width: 180px; height: 180px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin-bottom: 8px; border: 2px solid #ddd;">No Image</div>'
-            }
-            <div style="display: flex; gap: 5px;">
-              <button onclick="editHeroImage('${hero._id}', '${imageUrl}', '${heroName}', '${hero.rarity}')" style="padding: 6px 12px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; flex: 1;">Edit</button>
-              <button onclick="deleteHero('${hero._id}')" style="padding: 6px 12px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; flex: 1;">Delete</button>
-            </div>
-          </div>
-        `;
-        }).join('');
-
+        const imageUrl = hero.imageUrl || hero.heroPicture;
+        const cacheBuster = `?t=${Date.now()}`;
+        
         return `
-          <div style="background-color: #ffffff; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px; margin-bottom: 15px;">
-            <h3 style="color: var(--color-orange); margin-bottom: 8px; font-size: 18px;">${heroName}</h3>
-            <p style="color: #000000; margin-bottom: 15px;"><strong>Rarity:</strong> ${firstHero.rarity} | <strong>Skins:</strong> ${skins.length}</p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px;">
-              ${skinsHTML}
+          <div style="background-color: #ffffff; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center;">
+            ${imageUrl ?
+              `<img src="${imageUrl}${cacheBuster}" alt="${heroName}" style="width: 100%; height: auto; max-width: 100px; object-fit: contain; border-radius: 4px; border: 2px solid #ddd; display: block; margin: 0 auto 8px; background-color: #f9f9f9;">` :
+              '<div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin: 0 auto 8px; border: 2px solid #ddd;">No Image</div>'
+            }
+            <div style="color: var(--color-orange); font-weight: bold; font-size: 13px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${heroName}">${heroName}</div>
+            <div style="color: #666; font-size: 11px; margin-bottom: 8px;">${hero.rarity}</div>
+            <div style="display: flex; gap: 4px; justify-content: center;">
+              <button onclick="editHeroImage('${hero._id}', '${imageUrl}', '${heroName}', '${hero.rarity}')" style="padding: 4px 8px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; flex: 1;">Edit</button>
+              <button onclick="deleteHero('${hero._id}')" style="padding: 4px 8px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; flex: 1;">Del</button>
             </div>
           </div>
         `;
       }).join('');
 
-      heroListContainer.innerHTML = heroesHTML;
+      heroListContainer.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
+          ${heroesHTML}
+        </div>
+      `;
     } else {
       heroListContainer.innerHTML = '<p style="color: #666666;">No heroes found. Add your first hero above!</p>';
     }
@@ -285,8 +270,12 @@ async function deleteHero(heroId) {
   }
 
   try {
+    const token = localStorage.getItem('lgm_auth_token');
     const response = await fetch(`/api/heroes/${heroId}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
 
     const result = await response.json();
@@ -357,10 +346,12 @@ async function editHeroImage(heroId, imageUrl, heroName, rarity) {
       const updatedImageUrl = uploadResult.imageUrl;
 
       // Update hero with the image URL (same URL but file is overwritten)
+      const token = localStorage.getItem('lgm_auth_token');
       const updateResponse = await fetch(`/api/heroes/${heroId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           imageUrl: updatedImageUrl
@@ -481,7 +472,7 @@ function setupAdminTabs() {
 }
 
 /**
- * Attach image preview handler for hero image upload with crop functionality
+ * Attach image preview handler for hero image upload (direct upload, no crop)
  */
 function attachImagePreviewHandler() {
   const fileInput = document.getElementById('hero-image-file');
@@ -489,34 +480,19 @@ function attachImagePreviewHandler() {
   const previewImg = document.getElementById('hero-preview-img');
   const selectFromDbBtn = document.getElementById('select-from-db-btn');
 
-  // Store the cropped file
-  let croppedFile = null;
-
   if (fileInput) {
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        // Open cropper
-        imageCropper.open(file, (croppedImageFile) => {
-          // Store cropped file
-          croppedFile = croppedImageFile;
-
-          // Update file input with cropped file
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(croppedImageFile);
-          fileInput.files = dataTransfer.files;
-
-          // Show preview
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            previewImg.src = event.target.result;
-            preview.style.display = 'block';
-          };
-          reader.readAsDataURL(croppedImageFile);
-        });
+        // Show preview directly without cropping
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewImg.src = event.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
       } else {
         preview.style.display = 'none';
-        croppedFile = null;
       }
     });
   }
@@ -525,24 +501,19 @@ function attachImagePreviewHandler() {
   if (selectFromDbBtn) {
     selectFromDbBtn.addEventListener('click', async () => {
       await showDatabaseImageSelector((imageUrl) => {
-        // Open cropper with selected image URL
-        imageCropper.open(imageUrl, (croppedImageFile) => {
-          // Store cropped file
-          croppedFile = croppedImageFile;
+        // Use the image URL directly without cropping
+        fetch(imageUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], 'hero-image.jpg', { type: blob.type });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
 
-          // Update file input with cropped file
-          const dataTransfer = new DataTransfer();
-          dataTransfer.items.add(croppedImageFile);
-          fileInput.files = dataTransfer.files;
-
-          // Show preview
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            previewImg.src = event.target.result;
+            // Show preview
+            previewImg.src = imageUrl;
             preview.style.display = 'block';
-          };
-          reader.readAsDataURL(croppedImageFile);
-        });
+          });
       });
     });
   }
@@ -699,10 +670,12 @@ function attachHeroFormHandler() {
         imageUrl: imageUrl
       };
 
+      const token = localStorage.getItem('lgm_auth_token');
       const response = await fetch('/api/heroes', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(heroData)
       });

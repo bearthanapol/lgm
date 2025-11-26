@@ -252,7 +252,7 @@ function renderGuildWarPage() {
       
       <!-- Hero Selector Modal -->
       <div id="hero-selector-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10001; overflow-y: auto;">
-        <div style="max-width: 1000px; margin: 50px auto; background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px;">
+        <div style="max-width: 1200px; margin: 50px auto; background: white; border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="color: var(--color-orange); margin: 0;">Select Hero</h2>
             <button onclick="closeHeroSelector()" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
@@ -262,10 +262,10 @@ function renderGuildWarPage() {
             type="text" 
             id="hero-selector-search" 
             placeholder="Search heroes..." 
-            style="width: 100%; padding: 10px; margin-bottom: 20px; border: 2px solid var(--color-orange); border-radius: 4px; background: #1a1a1a; color: var(--color-white);"
+            style="width: 100%; padding: 10px; margin-bottom: 20px; border: 2px solid var(--color-orange); border-radius: 4px; background: white; color: black;"
           />
           
-          <div id="hero-selector-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; max-height: 600px; overflow-y: auto;">
+          <div id="hero-selector-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; max-height: 600px; overflow-y: auto;">
             <!-- Heroes will be loaded here -->
           </div>
         </div>
@@ -1695,12 +1695,12 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
     return `
       <div 
         onclick="openHeroSelector(${teamNumber}, '${teamId}', ${slotIndex})" 
-        style="background: #1a1a1a; border: 2px dashed #666; border-radius: 6px; padding: 4px; cursor: pointer; min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s;"
-        onmouseover="this.style.borderColor='var(--color-orange)'; this.style.background='#252525';"
-        onmouseout="this.style.borderColor='#666'; this.style.background='#1a1a1a';"
+        style="background: white; border: 2px dashed #ccc; border-radius: 6px; padding: 4px; cursor: pointer; min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s;"
+        onmouseover="this.style.borderColor='var(--color-orange)'; this.style.background='#fff8f0';"
+        onmouseout="this.style.borderColor='#ccc'; this.style.background='white';"
       >
-        <div style="font-size: 20px; color: #666; margin-bottom: 2px;">+</div>
-        <div style="color: #666; font-size: 8px; text-align: center;">Add</div>
+        <div style="font-size: 20px; color: #999; margin-bottom: 2px;">+</div>
+        <div style="color: #999; font-size: 8px; text-align: center;">Add</div>
       </div>
     `;
   }
@@ -1715,7 +1715,7 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
   const downSkill = skills[1] || '0';
 
   return `
-    <div style="background: #1a1a1a; border: 2px solid var(--color-orange); border-radius: 6px; padding: 5px; min-height: 140px; display: flex; flex-direction: column; font-size: 10px;">
+    <div style="background: white; border: 2px solid var(--color-orange); border-radius: 6px; padding: 5px; min-height: 140px; display: flex; flex-direction: column; font-size: 10px;">
       <!-- Hero Image -->
       <div 
         onclick="openHeroSelector(${teamNumber}, '${teamId}', ${slotIndex})"
@@ -1723,8 +1723,8 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
         title="Click to change hero"
       >
         ${hero.heroPicture ?
-      `<img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; border: 1px solid var(--color-orange);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23333%22 width=%2240%22 height=%2240%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%228%22%3ENo%3C/text%3E%3C/svg%3E'">` :
-      `<div style="width: 40px; height: 40px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 8px; border: 1px solid var(--color-orange); margin: 0 auto;">No Img</div>`
+      `<img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; border: 1px solid var(--color-orange);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2240%22 height=%2240%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%228%22%3ENo%3C/text%3E%3C/svg%3E'">` :
+      `<div style="width: 40px; height: 40px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 8px; border: 1px solid var(--color-orange); margin: 0 auto;">No Img</div>`
     }
       </div>
       
@@ -1734,7 +1734,7 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
       </div>
       
       <!-- Hero Name -->
-      <div style="color: var(--color-white); font-weight: 600; font-size: 9px; text-align: center; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${hero.heroname}">
+      <div style="color: #333; font-weight: 600; font-size: 9px; text-align: center; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${hero.heroname}">
         ${hero.heroname}
       </div>
       
@@ -1743,13 +1743,13 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
         <div style="display: flex; gap: 2px; justify-content: center;">
           <button
             onclick="setHeroPosition(${teamNumber}, '${teamId}', '${hero.heroname}', 1)"
-            style="width: 20px; padding: 2px 0; background: ${isFront ? '#2196F3' : '#333'}; color: white; border: 1px solid ${isFront ? '#2196F3' : '#666'}; border-radius: 3px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center;"
+            style="width: 20px; padding: 2px 0; background: ${isFront ? '#2196F3' : '#e0e0e0'}; color: ${isFront ? 'white' : '#666'}; border: 1px solid ${isFront ? '#2196F3' : '#ccc'}; border-radius: 3px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center;"
           >
             F
           </button>
           <button
             onclick="setHeroPosition(${teamNumber}, '${teamId}', '${hero.heroname}', 3)"
-            style="width: 20px; padding: 2px 0; background: ${isBack ? '#d32f2f' : '#333'}; color: white; border: 1px solid ${isBack ? '#d32f2f' : '#666'}; border-radius: 3px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center;"
+            style="width: 20px; padding: 2px 0; background: ${isBack ? '#d32f2f' : '#e0e0e0'}; color: ${isBack ? 'white' : '#666'}; border: 1px solid ${isBack ? '#d32f2f' : '#ccc'}; border-radius: 3px; font-size: 9px; font-weight: bold; cursor: pointer; text-align: center;"
           >
             B
           </button>
@@ -1771,7 +1771,7 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
             </button>
             <div 
               onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 0, 'up')"
-              style="width: 16px; height: 14px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--color-white); font-size: 9px; font-weight: bold; cursor: pointer;"
+              style="width: 16px; height: 14px; background: #f5f5f5; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 9px; font-weight: bold; cursor: pointer;"
               title="Click to cycle 0-3"
             >
               ${upSkill}
@@ -1788,7 +1788,7 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
             </button>
             <div 
               onclick="cycleSkillNumber(${teamNumber}, '${teamId}', '${hero.heroname}', 1, 'up')"
-              style="width: 16px; height: 14px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: var(--color-white); font-size: 9px; font-weight: bold; cursor: pointer;"
+              style="width: 16px; height: 14px; background: #f5f5f5; border: 1px solid var(--color-orange); border-radius: 2px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 9px; font-weight: bold; cursor: pointer;"
               title="Click to cycle 0-3"
             >
               ${downSkill}
@@ -2140,22 +2140,22 @@ function renderHeroSelectorGrid(heroes) {
   if (!grid) return;
 
   if (heroes.length === 0) {
-    grid.innerHTML = '<p style="color: var(--color-light-gray); text-align: center; padding: 40px;">No heroes found</p>';
+    grid.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No heroes found</p>';
     return;
   }
 
   grid.innerHTML = heroes.map(hero => `
     <div 
       onclick="selectHeroFromDatabase('${hero.heroname}', '${hero.heroPicture}')" 
-      style="background: #1a1a1a; border: 2px solid #444; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.3s; text-align: center;"
-      onmouseover="this.style.borderColor='var(--color-orange)'; this.style.background='#252525';"
-      onmouseout="this.style.borderColor='#444'; this.style.background='#1a1a1a';"
+      style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 8px; cursor: pointer; transition: all 0.3s; text-align: center;"
+      onmouseover="this.style.borderColor='var(--color-orange)'; this.style.boxShadow='0 2px 8px rgba(255,102,0,0.3)';"
+      onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none';"
     >
       ${hero.heroPicture ?
-      `<img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Crect fill=%22%23333%22 width=%22120%22 height=%22120%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23666%22 font-size=%2214%22%3ENo Img%3C/text%3E%3C/svg%3E'">` :
-      `<div style="width: 100%; height: 120px; background: #333; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 12px; margin-bottom: 8px;">No Image</div>`
+      `<img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 100%; height: auto; max-width: 100px; object-fit: contain; border-radius: 6px; margin: 0 auto 6px; display: block;" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2212%22%3ENo Img%3C/text%3E%3C/svg%3E'">` :
+      `<div style="width: 100px; height: 100px; background: #f0f0f0; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 11px; margin: 0 auto 6px;">No Image</div>`
     }
-      <div style="color: var(--color-white); font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${hero.heroname}">
+      <div style="color: #333; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${hero.heroname}">
         ${hero.heroname}
       </div>
     </div>
@@ -2926,9 +2926,10 @@ async function loadBattleHistory(username, enemyTeamNumber) {
               style="flex: 1; padding: 4px 8px; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; color: white; font-size: 12px; max-width: 120px;"
             />
           </div>
-          <div style="color: #aaa; font-size: 12px;">
+          <div style="color: #aaa; font-size: 12px; margin-bottom: 6px;">
             ${(battle.heroDetails || []).map(h => h.heroName).join(', ') || battle.targetHeroes.join(', ')}
           </div>
+          ${battle.comment ? `<div style="color: #4FC3F7; font-size: 12px; font-style: italic; padding: 6px; background: #1a1a1a; border-radius: 4px; border-left: 2px solid #4FC3F7;">💬 ${battle.comment}</div>` : ''}
         </div>
       `;
     }).join('');
@@ -3234,6 +3235,14 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
   const enemyZone = findTeamState.zoneName || 'Unknown Zone';
   const enemyTeamNumber = findTeamState.teamNumber || 0;
 
+  // Ask for comment
+  const comment = prompt(`Add a comment for this battle (optional):\n\nTarget: ${targetUsername}\nEnemy: ${enemyZone}, Team ${enemyTeamNumber}`, '');
+  
+  // User cancelled
+  if (comment === null) {
+    return;
+  }
+
   try {
     // Save to current selection
     const selectionResponse = await fetch('/api/guildwar/selection', {
@@ -3245,7 +3254,8 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
         targetHeroes,
         heroDetails,
         enemyZone,
-        enemyTeamNumber
+        enemyTeamNumber,
+        comment: comment.trim()
       })
     });
 
@@ -3267,7 +3277,8 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
         targetHeroes,
         heroDetails,
         enemyZone,
-        enemyTeamNumber
+        enemyTeamNumber,
+        comment: comment.trim()
       })
     });
 

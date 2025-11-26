@@ -272,6 +272,7 @@ async function saveBattleHistory(battleData) {
     targetUsername: battleData.targetUsername,
     targetHeroes: battleData.targetHeroes || [],
     heroDetails: battleData.heroDetails || [],
+    comment: battleData.comment || '', // User's comment about the battle
     result: 'pending', // 'pending', 'victory', 'defeat'
     battleDate: new Date()
   };
@@ -354,6 +355,9 @@ async function resetAllGuildWarTeams() {
       }
     }
   );
+  
+  // Also clear all battle history
+  await db.collection(BATTLE_HISTORY_COLLECTION).deleteMany({});
   
   return result;
 }
