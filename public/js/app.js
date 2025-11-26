@@ -31,12 +31,13 @@ function renderMainLayout(section, page, pageContent) {
   if (appContainer && headerElement && sidebarElement && contentArea) {
     showContainer('app-container');
 
-    // Get username from auth manager
+    // Get username and role from auth manager
     const userInfo = authManager.getUserInfo();
     const username = userInfo ? userInfo.username : 'User';
+    const userRole = userInfo ? (userInfo.role || 'gmember') : 'gmember';
 
-    // Render header
-    headerElement.innerHTML = renderHeader(username, section);
+    // Render header with role
+    headerElement.innerHTML = renderHeader(username, section, userRole);
 
     // Render sidebar
     sidebarElement.innerHTML = renderSidebar(section, page);
@@ -164,8 +165,31 @@ router.addRoute('/team/my-team', () => {
   }, 500);
 });
 
+router.addRoute('/team/gwar-noti', () => {
+  const pageContent = renderGWarNotiPage();
+  renderMainLayout('team', 'gwar-noti', pageContent);
+
+  // Load GWar Noti after rendering
+  setTimeout(() => {
+    loadGWarNoti();
+  }, 100);
+});
+
 // Admin Section Routes
 router.addRoute('/admin/manage', () => {
+  // Check if user has admin role
+  const userInfo = authManager.getUserInfo();
+  const userRole = userInfo ? (userInfo.role || 'gmember') : 'gmember';
+  
+  if (userRole !== 'admin') {
+    // Redirect non-admin users to home
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Access denied. Admin privileges required.');
+    }
+    router.navigate('/home');
+    return;
+  }
+
   const pageContent = renderAdminPage();
   renderMainLayout('admin', 'manage', pageContent);
 

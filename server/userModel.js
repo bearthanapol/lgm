@@ -7,8 +7,15 @@ const { v4: uuidv4 } = require('uuid');
  * @property {string} username - Unique username (3-20 characters)
  * @property {string} ign - In Game Name
  * @property {string} passwordHash - bcrypt hashed password
+ * @property {string} role - User role: 'gmember', 'gmaster', 'gassist', or 'admin'
  * @property {string} createdAt - ISO 8601 timestamp
  */
+
+/**
+ * Valid user roles
+ */
+const VALID_ROLES = ['gmember', 'gmaster', 'gassist', 'admin'];
+const DEFAULT_ROLE = 'gmember';
 
 /**
  * Validate username
@@ -77,18 +84,33 @@ function validatePassword(password) {
 }
 
 /**
+ * Determine user role based on username
+ * @param {string} username - Username
+ * @returns {string} User role
+ */
+function determineUserRole(username) {
+  // Special case: 'bear' is always admin
+  if (username === 'bear') {
+    return 'admin';
+  }
+  return DEFAULT_ROLE;
+}
+
+/**
  * Create a new user object
  * @param {string} username - Username
  * @param {string} ign - In Game Name
  * @param {string} passwordHash - Hashed password
+ * @param {string} role - User role (optional, will be determined if not provided)
  * @returns {User} User object
  */
-function createUserObject(username, ign, passwordHash) {
+function createUserObject(username, ign, passwordHash, role = null) {
   return {
     id: uuidv4(),
     username,
     ign,
     passwordHash,
+    role: role || determineUserRole(username),
     createdAt: new Date().toISOString()
   };
 }
@@ -97,5 +119,8 @@ module.exports = {
   validateUsername,
   validateEmail,
   validatePassword,
-  createUserObject
+  createUserObject,
+  determineUserRole,
+  VALID_ROLES,
+  DEFAULT_ROLE
 };

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const heroModel = require('./heroModel');
+const { requireAuth } = require('./authMiddleware');
+const { requireAdmin } = require('./roleMiddleware');
 
 /**
  * GET /api/heroes - Get all heroes
@@ -49,9 +51,9 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
- * POST /api/heroes - Create a new hero
+ * POST /api/heroes - Create a new hero (Admin only)
  */
-router.post('/', async (req, res) => {
+router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { name, type, attack, defense, hp, rarity, description, imageUrl } = req.body;
     
@@ -91,9 +93,9 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * PUT /api/heroes/:id - Update hero
+ * PUT /api/heroes/:id - Update hero (Admin only)
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { name, type, attack, defense, hp, rarity, description, imageUrl } = req.body;
     
@@ -130,9 +132,9 @@ router.put('/:id', async (req, res) => {
 });
 
 /**
- * DELETE /api/heroes/:id - Delete hero
+ * DELETE /api/heroes/:id - Delete hero (Admin only)
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     const deleted = await heroModel.deleteHero(req.params.id);
     

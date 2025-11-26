@@ -173,8 +173,19 @@ function renderCastleRushPage() {
 function renderGuildWarPage() {
   return `
     <div class="page-content">
-      <h1>Guild War - Enemy Teams</h1>
-      <p>View and manage all 115 enemy teams for Guild War.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+        <div>
+          <h1 style="margin: 0 0 5px 0;">Guild War - Enemy Teams</h1>
+          <p style="margin: 0;">View and manage all 115 enemy teams for Guild War.</p>
+        </div>
+        <button 
+          onclick="resetGuildWar()"
+          style="padding: 10px 20px; background: #d32f2f; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; white-space: nowrap;"
+          title="Reset all teams (clear defeated status and star levels)"
+        >
+          🔄 Reset Guild War
+        </button>
+      </div>
       
       <div style="margin-top: 20px; margin-bottom: 20px;">
         <input 
@@ -471,15 +482,7 @@ function renderMyTeamPage() {
   return `
     <div class="page-content">
       <h1>My Team</h1>
-      <p>Manage your hero collection and view Guild War notifications.</p>
-      
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px;">
-        <button onclick="switchMyTeamTab('team')" id="tab-btn-team" style="background: var(--color-orange); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">My Team</button>
-        <button onclick="switchMyTeamTab('gwar-noti')" id="tab-btn-gwar-noti" style="background: #333; color: #888; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">GWar Noti</button>
-      </div>
-
-      <!-- My Team Content -->
-      <div id="tab-content-team">
+      <p>Manage your hero collection with the Hero Recognition Tool.</p>
         <div style="margin-top: 20px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
           <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎮 Hero Recognition Tool</h2>
           <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
@@ -517,12 +520,19 @@ function renderMyTeamPage() {
           <p>No heroes saved yet. Use the Hero Recognition Tool to add heroes to your team!</p>
         </div>
       </div>
+    </div>
+  `;
+}
 
-      <!-- GWar Noti Content -->
-      <div id="tab-content-gwar-noti" style="display: none;">
-        <div id="gwar-noti-content">
-          <p style="color: #888; text-align: center;">Loading notification...</p>
-        </div>
+// GWar Noti Page
+function renderGWarNotiPage() {
+  return `
+    <div class="page-content">
+      <h1>Guild War Notification</h1>
+      <p>View your current Guild War target assignment.</p>
+      
+      <div id="gwar-noti-content" style="margin-top: 30px;">
+        <p style="color: #888; text-align: center;">Loading notification...</p>
       </div>
     </div>
   `;
@@ -1069,6 +1079,42 @@ async function loadGuildInfo() {
 
     if (userGuild) {
       // User is in a guild
+      const isGuildMaster = userGuild.guildMasterName === username;
+      const assistants = userGuild.guildAssistants || [];
+      
+      // Generate member list with assistant checkboxes (only for guild master)
+      const memberListHTML = userGuild.guildMemberNames ? userGuild.guildMemberNames.map(member => {
+        const isAssistant = assistants.includes(member);
+        const isMaster = member === userGuild.guildMasterName;
+        
+        if (isGuildMaster && !isMaster) {
+          // Show checkbox for guild master to assign assistants
+          return `
+            <li style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input 
+                  type="checkbox" 
+                  ${isAssistant ? 'checked' : ''} 
+                  onchange="toggleAssistant('${userGuild._id}', '${member}', this.checked)"
+                  style="cursor: pointer;"
+                />
+                <span>${member}</span>
+                ${isAssistant ? '<span style="color: #4FC3F7; font-size: 12px;">(Assistant)</span>' : ''}
+              </label>
+            </li>
+          `;
+        } else {
+          // Regular member display
+          return `
+            <li style="margin-bottom: 8px;">
+              ${member}
+              ${isMaster ? '<span style="color: var(--color-orange); font-size: 12px;">(Master)</span>' : ''}
+              ${isAssistant ? '<span style="color: #4FC3F7; font-size: 12px;">(Assistant)</span>' : ''}
+            </li>
+          `;
+        }
+      }).join('') : '<li>No members</li>';
+      
       const detailsDiv = document.getElementById('guild-details');
       detailsDiv.innerHTML = `
         <div style="margin-bottom: 15px;">
@@ -1085,8 +1131,9 @@ async function loadGuildInfo() {
         </div>
         <div>
           <strong style="color: var(--color-orange);">Member List:</strong>
-          <ul style="margin-top: 10px; padding-left: 20px; color: var(--color-white);">
-            ${userGuild.guildMemberNames ? userGuild.guildMemberNames.map(member => `<li>${member}</li>`).join('') : '<li>No members</li>'}
+          ${isGuildMaster ? '<p style="color: #4FC3F7; font-size: 13px; margin-top: 5px; margin-bottom: 10px;">✓ Check members to assign as assistants</p>' : ''}
+          <ul style="margin-top: 10px; padding-left: 20px; color: var(--color-white); list-style: none;">
+            ${memberListHTML}
           </ul>
         </div>
       `;
@@ -1166,7 +1213,7 @@ async function createGuild(guildName, guildPassword) {
 
     if (data.success) {
       alert('Guild created successfully!');
-      loadGuildInfo(); // Reload guild info
+      await refreshUserRole(); // Refresh role after creating guild (will reload page)
     } else {
       alert('Failed to create guild: ' + data.error);
     }
@@ -1250,7 +1297,7 @@ async function joinGuild(guildName, guildPassword) {
 
     if (addData.success) {
       alert('Successfully joined the guild!');
-      loadGuildInfo(); // Reload guild info
+      await refreshUserRole(); // Refresh role after joining guild (will reload page)
     } else {
       alert('Failed to join guild: ' + addData.error);
     }
@@ -1277,13 +1324,105 @@ async function leaveGuild(guildId, username) {
 
     if (data.success) {
       alert('You have left the guild');
-      loadGuildInfo(); // Reload guild info
+      await refreshUserRole(); // Refresh role after leaving (will reload page)
     } else {
       alert('Failed to leave guild: ' + data.error);
     }
   } catch (error) {
     console.error('Error leaving guild:', error);
     alert('Error leaving guild: ' + error.message);
+  }
+}
+
+/**
+ * Toggle assistant status for a guild member
+ */
+async function toggleAssistant(guildId, memberName, isAssistant) {
+  try {
+    const method = isAssistant ? 'POST' : 'DELETE';
+    const url = isAssistant 
+      ? `/api/guilds/${guildId}/assistants`
+      : `/api/guilds/${guildId}/assistants/${memberName}`;
+    
+    const options = {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    if (isAssistant) {
+      options.body = JSON.stringify({ assistantName: memberName });
+    }
+    
+    const response = await fetch(url, options);
+    const data = await response.json();
+    
+    if (data.success) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.success(isAssistant ? `${memberName} is now an assistant` : `${memberName} is no longer an assistant`);
+      }
+      // Reload guild info to refresh the display
+      await loadGuildInfo();
+    } else {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.error(data.error || 'Failed to update assistant status');
+      }
+      // Reload to reset checkbox state
+      await loadGuildInfo();
+    }
+  } catch (error) {
+    console.error('Error toggling assistant:', error);
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Error updating assistant status');
+    }
+    // Reload to reset checkbox state
+    await loadGuildInfo();
+  }
+}
+
+/**
+ * Refresh user role from server
+ */
+async function refreshUserRole() {
+  try {
+    const token = localStorage.getItem('lgm_auth_token');
+    if (!token) return;
+    
+    const response = await fetch('/api/auth/refresh-role', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update token and user info in localStorage
+      localStorage.setItem('lgm_auth_token', data.token);
+      localStorage.setItem('lgm_user_info', JSON.stringify(data.user));
+      
+      // Reload the page to update UI with new role
+      window.location.reload();
+    }
+  } catch (error) {
+    console.error('Error refreshing user role:', error);
+  }
+}
+
+/**
+ * Check if user can edit Guild War (gmaster, gassist, or admin)
+ */
+function canEditGuildWar() {
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (!userInfo) return false;
+  
+  try {
+    const user = JSON.parse(userInfo);
+    const role = user.role || 'gmember';
+    return role === 'gmaster' || role === 'gassist' || role === 'admin';
+  } catch (e) {
+    return false;
   }
 }
 
@@ -1483,6 +1622,8 @@ function renderGuildWarTeamCard(team) {
     return { hero, slotIndex };
   });
 
+  const enemyName = team.enemyName || '';
+
   return `
     <div class="guild-war-team-card" data-team-number="${team.teamNumber}" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 6px; padding: 8px; opacity: ${opacity};">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -1516,6 +1657,17 @@ function renderGuildWarTeamCard(team) {
             <span style="color: #666; font-size: 10px;">Def</span>
           </div>
         </div>
+      </div>
+      
+      <!-- Enemy Name Input -->
+      <div style="margin-bottom: 6px;">
+        <input 
+          type="text" 
+          value="${enemyName}" 
+          placeholder="Enemy Name"
+          onblur="updateEnemyName('${team._id}', this.value)"
+          style="width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--color-orange); border-radius: 3px; background: white; color: black;"
+        >
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; pointer-events: ${pointerEvents};">
@@ -1706,6 +1858,13 @@ function filterGuildWarTeams(teams, query) {
  * Add hero to team
  */
 async function addHeroToTeam(teamNumber, teamId) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   const heroname = prompt('Enter Hero Name:');
   if (!heroname || !heroname.trim()) {
     return;
@@ -1767,6 +1926,13 @@ async function addHeroToTeam(teamNumber, teamId) {
  * Edit hero in team
  */
 async function editGuildWarHero(teamNumber, teamId, heroname) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   // Get current hero data
   const response = await fetch(`/api/guildwar/${teamId}`);
   const teamData = await response.json();
@@ -1820,6 +1986,13 @@ async function editGuildWarHero(teamNumber, teamId, heroname) {
  * Remove hero from team
  */
 async function removeHeroFromTeam(teamNumber, teamId, heroname) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   if (!confirm(`Remove ${heroname} from Team ${teamNumber}?`)) {
     return;
   }
@@ -1900,6 +2073,13 @@ let allHeroesForSelector = [];
  * Open hero selector modal
  */
 async function openHeroSelector(teamNumber, teamId, slotIndex) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   currentHeroSelectorTeamNumber = teamNumber;
   currentHeroSelectorTeamId = teamId;
   currentHeroSelectorSlotIndex = slotIndex;
@@ -2091,6 +2271,13 @@ async function selectHeroFromDatabase(heroname, heroPicture) {
  * Set hero position (F=1, B=3)
  */
 async function setHeroPosition(teamNumber, teamId, heroname, position) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   try {
     // Get current hero data
     const response = await fetch(`/api/guildwar/${teamId}`);
@@ -2132,6 +2319,13 @@ async function setHeroPosition(teamNumber, teamId, heroname, position) {
  * D decreases: 0->1->2->3->0 (same as up, cycles forward)
  */
 async function cycleSkillNumber(teamNumber, teamId, heroname, skillIndex, direction) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   try {
     // Get current hero data
     const response = await fetch(`/api/guildwar/${teamId}`);
@@ -2242,6 +2436,13 @@ function attachGuildWarStarHandlers() {
  * Cycle through star levels for Guild War (0 → 1 → 2 → ... → 12 → 0)
  */
 async function cycleGuildWarStarLevel(teamNumber, teamId, heroname, slotIndex) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   const stars = document.querySelectorAll(`#gw-stars-${teamNumber}-${slotIndex} .guild-war-star`);
 
   // Get current level from star colors
@@ -2349,6 +2550,13 @@ async function saveGuildWarStarLevel(teamId, heroname, starLevel) {
  * Open ring selector modal
  */
 async function openRingSelector(teamNumber, teamId, heroname) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   // Ring URLs - you can update these when you create the GitHub folder
   const rings = [
     { name: 'Ring 1', url: 'https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/rings/ring1.png' },
@@ -2417,6 +2625,15 @@ async function openRingSelector(teamNumber, teamId, heroname) {
  * Toggle team defeat status
  */
 async function toggleTeamDefeat(teamId, isDefeated) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    // Reload to reset checkbox
+    await loadGuildWarTeams();
+    return;
+  }
+  
   // If team doesn't exist yet (empty slot), we can't defeat it
   if (!teamId || teamId === 'null') return;
 
@@ -2439,6 +2656,13 @@ async function toggleTeamDefeat(teamId, isDefeated) {
  * Update team speed
  */
 async function updateTeamSpeed(teamId, speed) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   if (!teamId || teamId === 'null') return;
 
   try {
@@ -2459,9 +2683,44 @@ async function updateTeamSpeed(teamId, speed) {
 }
 
 /**
+ * Update enemy name
+ */
+async function updateEnemyName(teamId, enemyName) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
+  if (!teamId || teamId === 'null') return;
+
+  try {
+    const response = await fetch(`/api/guildwar/${teamId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enemyName })
+    });
+
+    if (!response.ok) {
+      console.error('Failed to update enemy name');
+    }
+  } catch (error) {
+    console.error('Error updating enemy name:', error);
+  }
+}
+
+/**
  * Toggle team speed type (Lower/Higher)
  */
 async function toggleTeamSpeedType(teamId) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   if (!teamId || teamId === 'null') return;
 
   try {
@@ -2479,6 +2738,49 @@ async function toggleTeamSpeedType(teamId) {
     }
   } catch (error) {
     console.error('Error toggling team speed type:', error);
+  }
+}
+
+/**
+ * Reset Guild War - Clear all data for new cycle
+ */
+async function resetGuildWar() {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can reset Guild War');
+    }
+    return;
+  }
+  
+  const confirmed = confirm(
+    '⚠️ Reset Guild War?\n\n' +
+    'This will CLEAR ALL DATA:\n' +
+    '• Remove all heroes from all teams\n' +
+    '• Clear defeated team checkmarks\n' +
+    '• Reset star levels, skills, and rings\n' +
+    '• Clear speed settings\n\n' +
+    'This action cannot be undone. Continue?'
+  );
+  
+  if (!confirmed) return;
+  
+  try {
+    const response = await fetch('/api/guildwar/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      alert(`✅ Guild War Reset Complete!\n\n${data.message}\n\nAll teams are now empty and ready for the new cycle.`);
+      loadGuildWarTeams(); // Reload to show reset state
+    } else {
+      alert('Failed to reset Guild War: ' + (data.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Error resetting Guild War:', error);
+    alert('Error resetting Guild War: ' + error.message);
   }
 }
 
@@ -2515,6 +2817,13 @@ let findTeamState = {
  * Open Find Team Modal
  */
 function openFindTeamModal(teamNumber, teamId) {
+  if (!canEditGuildWar()) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Only Guild Master and Assistants can edit Guild War teams');
+    }
+    return;
+  }
+  
   // Ensure teamNumber is a number
   const numTeamNumber = parseInt(teamNumber);
   
@@ -2982,30 +3291,7 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
   }
 }
 
-/**
- * Switch tabs in My Team page
- */
-function switchMyTeamTab(tabName) {
-  const btnTeam = document.getElementById('tab-btn-team');
-  const btnNoti = document.getElementById('tab-btn-gwar-noti');
-  const contentTeam = document.getElementById('tab-content-team');
-  const contentNoti = document.getElementById('tab-content-gwar-noti');
 
-  if (btnTeam && btnNoti && contentTeam && contentNoti) {
-    btnTeam.style.background = tabName === 'team' ? 'var(--color-orange)' : '#333';
-    btnTeam.style.color = tabName === 'team' ? 'white' : '#888';
-
-    btnNoti.style.background = tabName === 'gwar-noti' ? 'var(--color-orange)' : '#333';
-    btnNoti.style.color = tabName === 'gwar-noti' ? 'white' : '#888';
-
-    contentTeam.style.display = tabName === 'team' ? 'block' : 'none';
-    contentNoti.style.display = tabName === 'gwar-noti' ? 'block' : 'none';
-
-    if (tabName === 'gwar-noti') {
-      loadGWarNoti();
-    }
-  }
-}
 
 /**
  * Load Guild War Notification (Selected Target)
@@ -3041,6 +3327,20 @@ async function loadGWarNoti() {
 
       const enemyZone = selection.enemyZone || 'Unknown Zone';
       const enemyTeamNumber = selection.enemyTeamNumber || '?';
+      
+      // Fetch enemy name from guild war team
+      let enemyName = '';
+      if (enemyTeamNumber && enemyTeamNumber !== '?') {
+        try {
+          const teamResponse = await fetch(`/api/guildwar/number/${enemyTeamNumber}`);
+          const teamData = await teamResponse.json();
+          if (teamData.success && teamData.data) {
+            enemyName = teamData.data.enemyName || '';
+          }
+        } catch (e) {
+          console.error('Error fetching enemy name:', e);
+        }
+      }
 
       contentDiv.innerHTML = `
         <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 2px solid var(--color-orange); max-width: 600px; margin: 0 auto;">
@@ -3051,6 +3351,7 @@ async function loadGWarNoti() {
             <div style="font-size: 18px; color: white; margin-bottom: 5px;">
               <span style="color: var(--color-orange); font-weight: bold;">${enemyZone}</span>, Team <span style="color: var(--color-orange); font-weight: bold;">${enemyTeamNumber}</span>
             </div>
+            ${enemyName ? `<div style="font-size: 14px; color: #aaa; margin-top: 5px;">Enemy: <span style="color: white;">${enemyName}</span></div>` : ''}
           </div>
           
           <div style="margin-top: 20px;">

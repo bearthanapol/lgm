@@ -258,4 +258,87 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/guilds/:id/assistants - Add assistant to guild
+ */
+router.post('/:id/assistants', async (req, res) => {
+  try {
+    const { assistantName } = req.body;
+
+    if (!assistantName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing assistantName'
+      });
+    }
+
+    const updated = await guildModel.addAssistantToGuild(req.params.id, assistantName);
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Guild not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Assistant added successfully'
+    });
+  } catch (error) {
+    console.error('Error adding assistant:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add assistant'
+    });
+  }
+});
+
+/**
+ * DELETE /api/guilds/:id/assistants/:assistantName - Remove assistant from guild
+ */
+router.delete('/:id/assistants/:assistantName', async (req, res) => {
+  try {
+    const updated = await guildModel.removeAssistantFromGuild(req.params.id, req.params.assistantName);
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        error: 'Guild not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Assistant removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing assistant:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove assistant'
+    });
+  }
+});
+
+/**
+ * GET /api/guilds/role/:username - Get user's guild role
+ */
+router.get('/role/:username', async (req, res) => {
+  try {
+    const role = await guildModel.getUserGuildRole(req.params.username);
+
+    res.json({
+      success: true,
+      data: { role: role || 'gmember' }
+    });
+  } catch (error) {
+    console.error('Error getting user role:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get user role'
+    });
+  }
+});
+
 module.exports = router;

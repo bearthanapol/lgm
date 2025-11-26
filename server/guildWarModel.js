@@ -29,6 +29,7 @@ async function createEnemyTeam(teamData) {
     isDefeated: false, // Team defeat status
     speed: teamData.speed || '', // Team speed
     speedType: teamData.speedType || 'lower', // 'lower' or 'higher'
+    enemyName: teamData.enemyName || '', // Enemy player name
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -230,7 +231,8 @@ module.exports = {
   getBattleHistory,
   updateBattleResult,
   updateBattleSpeed,
-  getAllBattleHistory
+  getAllBattleHistory,
+  resetAllGuildWarTeams
 };
 
 const SELECTION_COLLECTION = 'guildWar_selections';
@@ -331,4 +333,27 @@ async function getAllBattleHistory(username) {
     .find({ username })
     .sort({ battleDate: -1 })
     .toArray();
+}
+
+/**
+ * Reset all Guild War teams (clear all data for new cycle)
+ */
+async function resetAllGuildWarTeams() {
+  const db = getDatabase();
+  
+  // Reset all teams: clear heroes, defeated status, and speed
+  const result = await db.collection(COLLECTION_NAME).updateMany(
+    {},
+    {
+      $set: {
+        heroes: [],           // Clear all heroes
+        isDefeated: false,    // Clear defeated status
+        speed: '',            // Clear speed
+        speedType: 'lower',   // Reset to default
+        updatedAt: new Date()
+      }
+    }
+  );
+  
+  return result;
 }

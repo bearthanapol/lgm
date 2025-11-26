@@ -26,6 +26,7 @@ async function createGuild(guildData) {
     guildName: guildData.guildName,
     guildMasterName: guildData.guildMasterName,
     guildMemberNames: guildData.guildMemberNames || [], // Array of member usernames
+    guildAssistants: guildData.guildAssistants || [], // Array of assistant usernames
     guildPassword: hashedPassword,
     createdAt: new Date(),
     updatedAt: new Date()
@@ -149,6 +150,75 @@ async function deleteGuild(guildId) {
   return result.deletedCount > 0;
 }
 
+/**
+ * Add assistant to guild
+ */
+async function addAssistantToGuild(guildId, assistantName) {
+  const db = getDatabase();
+  
+  const result = await db.collection(COLLECTION_NAME).updateOne(
+    { _id: new ObjectId(guildId) },
+    { 
+      $addToSet: { guildAssistants: assistantName },
+      $set: { updatedAt: new Date() }
+    }
+  );
+  
+  return result.modifiedCount > 0;
+}
+
+/**
+ * Remove assistant from guild
+ */
+async function removeAssistantFromGuild(guildId, assistantName) {
+  const db = getDatabase();
+  
+  const result = await db.collection(COLLECTION_NAME).updateOne(
+    { _id: new ObjectId(guildId) },
+    { 
+      $pull: { guildAssistants: assistantName },
+      $set: { updatedAt: new Date() }
+    }
+  );
+  
+  return result.modifiedCount > 0;
+}
+
+/**
+ * Get user's role in guild
+ * @param {string} username - Username to check
+ * @returns {Promise<string|null>} - 'gmaster', 'gassist', 'gmember', or null if not in guild
+ */
+async function getUserGuildRole(username) {
+  const db = getDatabase();
+  
+  // Check if user is guild master
+  const guildAsMaster = await db.collection(COLLECTION_NAME).findOne({ 
+    guildMasterName: username 
+  });
+  if (guildAsMaster) {
+    return 'gmaster';
+  }
+  
+  // Check if user is assistant
+  const guildAsAssistant = await db.collection(COLLECTION_NAME).findOne({ 
+    guildAssistants: username 
+  });
+  if (guildAsAssistant) {
+    return 'gassist';
+  }
+  
+  // Check if user is member
+  const guildAsMember = await db.collection(COLLECTION_NAME).findOne({ 
+    guildMemberNames: username 
+  });
+  if (guildAsMember) {
+    return 'gmember';
+  }
+  
+  return null;
+}
+
 module.exports = {
   createGuild,
   getAllGuilds,
@@ -158,5 +228,8 @@ module.exports = {
   addMemberToGuild,
   removeMemberFromGuild,
   updateGuild,
-  deleteGuild
+  deleteGuild,
+  addAssistantToGuild,
+  removeAssistantFromGuild,
+  getUserGuildRole
 };

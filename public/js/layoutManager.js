@@ -4,9 +4,15 @@
  * Render the header component
  * @param {string} username - The authenticated user's username
  * @param {string} activeSection - The currently active section (home/lgm/guild/team)
+ * @param {string} userRole - The user's role (gmember, gmaster, gassist, admin)
  * @returns {string} - HTML string for the header
  */
-function renderHeader(username, activeSection = '') {
+function renderHeader(username, activeSection = '', userRole = 'gmember') {
+  // Only show Admin link for admin role
+  const adminLink = userRole === 'admin' 
+    ? `<a href="/admin/manage" class="header-nav-link ${activeSection === 'admin' ? 'active' : ''}" data-section="admin">Admin</a>`
+    : '';
+
   return `
     <div class="header-logo">LGM</div>
     <nav class="header-nav">
@@ -14,7 +20,7 @@ function renderHeader(username, activeSection = '') {
       <a href="/lgm/hero" class="header-nav-link ${activeSection === 'lgm' ? 'active' : ''}" data-section="lgm">LGM</a>
       <a href="/guild/info" class="header-nav-link ${activeSection === 'guild' ? 'active' : ''}" data-section="guild">Guild</a>
       <a href="/team/my-team" class="header-nav-link ${activeSection === 'team' ? 'active' : ''}" data-section="team">Team</a>
-      <a href="/admin/manage" class="header-nav-link ${activeSection === 'admin' ? 'active' : ''}" data-section="admin">Admin</a>
+      ${adminLink}
     </nav>
     <div class="header-user" id="header-user">
       <span class="header-user-name">${username}</span>
@@ -55,6 +61,7 @@ function renderSidebar(section, activePage = '') {
   } else if (section === 'team') {
     sidebarLinks = `
       <li><a href="/team/my-team" class="sidebar-link ${activePage === 'my-team' ? 'active' : ''}" data-page="my-team">My Team</a></li>
+      <li><a href="/team/gwar-noti" class="sidebar-link ${activePage === 'gwar-noti' ? 'active' : ''}" data-page="gwar-noti">Guild War Target</a></li>
     `;
   } else if (section === 'admin') {
     sidebarLinks = `

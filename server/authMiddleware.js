@@ -36,7 +36,8 @@ function authenticateToken(req, res, next) {
     // Attach user data to request object
     req.user = {
       userId: decoded.userId,
-      username: decoded.username
+      username: decoded.username,
+      role: decoded.role || 'gmember'
     };
 
     // Continue to next middleware/route handler
@@ -44,7 +45,11 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Alias for consistency
+const requireAuth = authenticateToken;
+
 module.exports = {
   authenticateToken,
+  requireAuth,
   JWT_SECRET
 };

@@ -3,7 +3,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validateUsername, validatePassword, createUserObject } = require('./userModel');
 const { findUserByUsername, createUser } = require('./dataManager');
-const { JWT_SECRET } = require('./authMiddleware');
+const { JWT_SECRET, requireAuth } = require('./authMiddleware');
+const { getUserRole } = require('./userRoleManager');
 
 const router = express.Router();
 
@@ -65,7 +66,8 @@ router.post('/signup', async (req, res) => {
     const token = jwt.sign(
       { 
         userId: newUser.id, 
-        username: newUser.username 
+        username: newUser.username,
+        role: newUser.role
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -77,7 +79,8 @@ router.post('/signup', async (req, res) => {
       token,
       user: {
         username: newUser.username,
-        ign: newUser.ign
+        ign: newUser.ign,
+        role: newUser.role
       }
     });
 
@@ -124,11 +127,15 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // Get user's current role (checks guild membership and special cases like 'bear')
+    const userRole = await getUserRole(user.username);
+
     // Generate JWT token with 24-hour expiration
     const token = jwt.sign(
       { 
         userId: user.id, 
-        username: user.username 
+        username: user.username,
+        role: userRole
       },
       JWT_SECRET,
       { expiresIn: '24h' }
@@ -140,7 +147,8 @@ router.post('/login', async (req, res) => {
       token,
       user: {
         username: user.username,
-        ign: user.ign
+        ign: user.ign,
+        role: userRole
       }
     });
 
@@ -165,6 +173,82 @@ router.post('/logout', (req, res) => {
     success: true,
     message: 'Logout successful'
   });
+});
+
+/**
+ * GET /api/auth/refresh-role
+ * Refresh user's role based on current guild membership
+ */
+router.get('/refresh-role', requireAuth, async (req, res) => {
+  try {
+    const username = req.user.username;
+    
+    // Get updated role from guild membership
+    const updatedRole = await getUserRole(username);
+    
+    // Get user info
+    const user = await findUserByUsername(username);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // Generate new JWT with updated role
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username,
+        role: updatedRole
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    res.json({
+      success: true,
+      token,
+      user: {
+        username: user.username,
+        ign: user.ign,
+        role: updatedRole
+      }
+    });
+  } catch (error) {
+    console.error('Error refreshing role:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh role'
+    });
+  }
+});
+
+/**
+ * GET /api/auth/check-role/:username
+ * Check what role a username would get (for debugging)
+ */
+router.get('/check-role/:username', async (req, res) => {
+  try {
+    const username = req.params.username;
+    const role = await getUserRole(username);
+    
+    res.json({
+      success: true,
+      data: {
+        username: username,
+        role: role,
+        isAdmin: role === 'admin',
+        isBear: username === 'bear'
+      }
+    });
+  } catch (error) {
+    console.error('Error checking role:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check role'
+    });
+  }
 });
 
 module.exports = router;

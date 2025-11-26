@@ -480,4 +480,25 @@ router.get('/battle-history/:username', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/guildwar/reset - Reset all Guild War teams
+ */
+router.post('/reset', async (req, res) => {
+  try {
+    const result = await guildWarModel.resetAllGuildWarTeams();
+    
+    res.json({
+      success: true,
+      message: `Reset ${result.modifiedCount} teams successfully`,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error resetting Guild War:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset Guild War'
+    });
+  }
+});
+
 module.exports = router;

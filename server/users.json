@@ -19,5 +19,21 @@
     "ign": "bearyJelly",
     "passwordHash": "$2b$10$6N.UAI6UgsTQO/d4L4kux.FX33ylStiyO.apDLGrcI6OjIpSH7dlC",
     "createdAt": "2025-11-20T17:10:52.060Z"
+  },
+  {
+    "id": "54adaabf-4b6d-4a83-85d8-dc2aa9603b4f",
+    "username": "pwgmaster",
+    "ign": "pawhale",
+    "passwordHash": "$2b$10$7xFyV4Eo2CZg0goGnU4ODulnTfuec6mh7uwI2s7gZU1YF/zY8xN3m",
+    "role": "gmember",
+    "createdAt": "2025-11-26T04:27:25.760Z"
+  },
+  {
+    "id": "4b386e69-039f-4555-8763-b1a5a0d235ab",
+    "username": "pwmember",
+    "ign": "whalenoi",
+    "passwordHash": "$2b$10$SE5hc40KMoxDTbKM5xV2PexQ.3.AykIJvHhPD6is891L34yibZy7O",
+    "role": "gmember",
+    "createdAt": "2025-11-26T04:28:02.825Z"
   }
 ]

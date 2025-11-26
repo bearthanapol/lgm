@@ -1,11 +1,11 @@
 /* CSS Variables for Theme Colors */
 :root {
-    --color-black: #000000;
-    --color-dark-gray: #1a1a1a;
+    --color-black: #ffffff;
+    --color-dark-gray: #f5f5f5;
     --color-orange: #ff6600;
     --color-light-orange: #ff8833;
-    --color-white: #ffffff;
-    --color-light-gray: #cccccc;
+    --color-white: #000000;
+    --color-light-gray: #333333;
     --color-error: #ff3333;
 
     --font-family: 'Segoe UI', Arial, sans-serif;
@@ -23,8 +23,8 @@
 
 body {
     font-family: var(--font-family);
-    background-color: var(--color-black);
-    color: var(--color-white);
+    background-color: #ffffff;
+    color: #000000;
     font-size: 14px;
     line-height: 1.6;
     overflow-x: hidden;
@@ -48,11 +48,11 @@ body {
 }
 
 .bg-black {
-    background-color: #f5f5f5;
+    background-color: #ffffff;
 }
 
 .bg-dark-gray {
-    background-color: #f0f0f0;
+    background-color: #f5f5f5;
 }
 
 .bg-orange {
@@ -60,7 +60,7 @@ body {
 }
 
 .text-white {
-    color: var(--color-white);
+    color: #000000;
 }
 
 .text-orange {
@@ -93,7 +93,7 @@ body {
 
 .btn-primary {
     background-color: var(--color-orange);
-    color: var(--color-white);
+    color: #ffffff;
     height: 45px;
 }
 
@@ -120,8 +120,8 @@ body {
 }
 
 .input::placeholder {
-    color: var(--color-light-gray);
-    opacity: 0.6;
+    color: #999999;
+    opacity: 0.8;
 }
 
 /* Typography */
@@ -274,7 +274,7 @@ a:hover {
 
 .sidebar-nav a.active {
     background-color: var(--color-orange);
-    color: var(--color-white);
+    color: #ffffff;
 }
 
 /* Content Area Styles */
