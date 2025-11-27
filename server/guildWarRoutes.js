@@ -1,13 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const guildWarModel = require('./guildWarModel');
+const guildModel = require('./guildModel');
 
 /**
- * GET /api/guildwar - Get all enemy teams
+ * GET /api/guildwar - Get all enemy teams for a guild
+ * Query param: username
  */
 router.get('/', async (req, res) => {
   try {
-    const teams = await guildWarModel.getAllEnemyTeams();
+    const { username } = req.query;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required'
+      });
+    }
+    
+    // Get user's guild
+    const guild = await guildModel.getGuildByMember(username);
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'User is not in a guild'
+      });
+    }
+    
+    const teams = await guildWarModel.getAllEnemyTeams(guild.guildName);
     res.json({
       success: true,
       data: teams
@@ -23,10 +43,29 @@ router.get('/', async (req, res) => {
 
 /**
  * GET /api/guildwar/number/:teamNumber - Get enemy team by team number
+ * Query param: username
  */
 router.get('/number/:teamNumber', async (req, res) => {
   try {
-    const team = await guildWarModel.getEnemyTeamByNumber(req.params.teamNumber);
+    const { username } = req.query;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required'
+      });
+    }
+    
+    // Get user's guild
+    const guild = await guildModel.getGuildByMember(username);
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'User is not in a guild'
+      });
+    }
+    
+    const team = await guildWarModel.getEnemyTeamByNumber(guild.guildName, req.params.teamNumber);
 
     if (!team) {
       return res.status(404).json({
@@ -80,16 +119,29 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const { teamNumber } = req.body;
+    const { teamNumber, username } = req.body;
 
-    if (!teamNumber) {
+    if (!teamNumber || !username) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required field: teamNumber'
+        error: 'Missing required fields: teamNumber and username'
       });
     }
 
-    const newTeam = await guildWarModel.createEnemyTeam(req.body);
+    // Get user's guild
+    const guild = await guildModel.getGuildByMember(username);
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'User is not in a guild'
+      });
+    }
+
+    // Replace username with guildName
+    const teamData = { ...req.body, guildName: guild.guildName };
+    delete teamData.username;
+
+    const newTeam = await guildWarModel.createEnemyTeam(teamData);
 
     res.status(201).json({
       success: true,
@@ -308,7 +360,7 @@ router.post('/search', async (req, res) => {
  */
 router.post('/selection', async (req, res) => {
   try {
-    const { username, targetUsername, targetHeroes, heroDetails, enemyZone, enemyTeamNumber } = req.body;
+    const { username, targetUsername, targetHeroes, heroDetails, enemyZone, enemyTeamNumber, comment, heroComments } = req.body;
 
     if (!username || !targetUsername) {
       return res.status(400).json({
@@ -322,7 +374,9 @@ router.post('/selection', async (req, res) => {
       targetHeroes,
       heroDetails: heroDetails || [],
       enemyZone: enemyZone || 'Unknown Zone',
-      enemyTeamNumber: enemyTeamNumber || 0
+      enemyTeamNumber: enemyTeamNumber || 0,
+      comment: comment || '',
+      heroComments: heroComments || {}
     });
 
     res.json({ success: true });
@@ -481,11 +535,29 @@ router.get('/battle-history/:username', async (req, res) => {
 });
 
 /**
- * POST /api/guildwar/reset - Reset all Guild War teams
+ * POST /api/guildwar/reset - Reset all Guild War teams for a user
  */
 router.post('/reset', async (req, res) => {
   try {
-    const result = await guildWarModel.resetAllGuildWarTeams();
+    const { username } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required'
+      });
+    }
+    
+    // Get user's guild
+    const guild = await guildModel.getGuildByMember(username);
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'User is not in a guild'
+      });
+    }
+    
+    const result = await guildWarModel.resetAllGuildWarTeams(guild.guildName);
     
     res.json({
       success: true,

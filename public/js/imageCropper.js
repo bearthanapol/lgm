@@ -46,10 +46,10 @@ class ImageCropper {
         </div>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-          <button id="crop-reset" style="padding: 10px 20px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Reset</button>
+          <button id="crop-reset" style="padding: 10px 20px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">Reset</button>
           <button id="crop-square" style="padding: 10px 20px; background: var(--color-orange); color: white; border: none; border-radius: 4px; cursor: pointer;">Square Crop</button>
           <div style="flex: 1;"></div>
-          <button id="crop-cancel" style="padding: 10px 20px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+          <button id="crop-cancel" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
           <button id="crop-apply" style="padding: 10px 20px; background: var(--color-orange); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Apply Crop</button>
         </div>
         

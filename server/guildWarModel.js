@@ -14,16 +14,23 @@ async function createEnemyTeam(teamData) {
     throw new Error('Team number must be between 1 and 115');
   }
 
-  // Check if team number already exists
+  // Require guildName
+  if (!teamData.guildName) {
+    throw new Error('Guild name is required');
+  }
+
+  // Check if team number already exists for this guild
   const existingTeam = await db.collection(COLLECTION_NAME).findOne({
+    guildName: teamData.guildName,
     teamNumber: teamData.teamNumber
   });
 
   if (existingTeam) {
-    throw new Error(`Team ${teamData.teamNumber} already exists`);
+    throw new Error(`Team ${teamData.teamNumber} already exists for this guild`);
   }
 
   const team = {
+    guildName: teamData.guildName, // Guild that owns this team data
     teamNumber: teamData.teamNumber, // 1-115
     heroes: teamData.heroes || [], // Array of 3 hero objects
     isDefeated: false, // Team defeat status
@@ -54,20 +61,29 @@ async function createEnemyTeam(teamData) {
 }
 
 /**
- * Get all enemy teams
+ * Get all enemy teams for a specific guild
  */
-async function getAllEnemyTeams() {
+async function getAllEnemyTeams(guildName) {
   const db = getDatabase();
-  const teams = await db.collection(COLLECTION_NAME).find({}).sort({ teamNumber: 1 }).toArray();
+  if (!guildName) {
+    return [];
+  }
+  const teams = await db.collection(COLLECTION_NAME).find({ guildName }).sort({ teamNumber: 1 }).toArray();
   return teams;
 }
 
 /**
- * Get enemy team by team number
+ * Get enemy team by team number for a specific guild
  */
-async function getEnemyTeamByNumber(teamNumber) {
+async function getEnemyTeamByNumber(guildName, teamNumber) {
   const db = getDatabase();
-  const team = await db.collection(COLLECTION_NAME).findOne({ teamNumber: parseInt(teamNumber) });
+  if (!guildName) {
+    return null;
+  }
+  const team = await db.collection(COLLECTION_NAME).findOne({ 
+    guildName,
+    teamNumber: parseInt(teamNumber) 
+  });
   return team;
 }
 
@@ -337,14 +353,18 @@ async function getAllBattleHistory(username) {
 }
 
 /**
- * Reset all Guild War teams (clear all data for new cycle)
+ * Reset all Guild War teams for a specific guild (clear all data for new cycle)
  */
-async function resetAllGuildWarTeams() {
+async function resetAllGuildWarTeams(guildName) {
   const db = getDatabase();
   
-  // Reset all teams: clear heroes, defeated status, and speed
+  if (!guildName) {
+    throw new Error('Guild name is required');
+  }
+  
+  // Reset all teams for this guild: clear heroes, defeated status, and speed
   const result = await db.collection(COLLECTION_NAME).updateMany(
-    {},
+    { guildName },
     {
       $set: {
         heroes: [],           // Clear all heroes
@@ -356,8 +376,8 @@ async function resetAllGuildWarTeams() {
     }
   );
   
-  // Also clear all battle history
-  await db.collection(BATTLE_HISTORY_COLLECTION).deleteMany({});
+  // Also clear all battle history for this guild
+  await db.collection(BATTLE_HISTORY_COLLECTION).deleteMany({ guildName });
   
   return result;
 }

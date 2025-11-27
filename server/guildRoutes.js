@@ -53,12 +53,12 @@ router.get('/:id', async (req, res) => {
  */
 router.get('/member/:username', async (req, res) => {
   try {
-    const guild = await guildModel.getGuildByName(req.params.username);
+    const guild = await guildModel.getGuildByMember(req.params.username);
 
     if (!guild) {
       return res.status(404).json({
         success: false,
-        error: 'Guild not found'
+        error: 'User is not in any guild'
       });
     }
 

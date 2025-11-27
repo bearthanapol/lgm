@@ -114,7 +114,7 @@ function renderGuildInfoPage() {
         </div>
         
         <div id="guild-member-view" style="display: none;">
-          <div style="background-color: var(--color-dark-gray); padding: 30px; border: 2px solid var(--color-orange); border-radius: 8px;">
+          <div style="background-color: white; padding: 30px; border: 2px solid var(--color-orange); border-radius: 8px;">
             <h2 style="color: var(--color-orange); margin-bottom: 20px;">Your Guild</h2>
             <div id="guild-details">
               <!-- Guild details will be loaded here -->
@@ -126,9 +126,9 @@ function renderGuildInfoPage() {
         </div>
         
         <div id="guild-no-member-view" style="display: none;">
-          <div style="background-color: var(--color-dark-gray); padding: 30px; border: 2px solid var(--color-orange); border-radius: 8px; text-align: center;">
+          <div style="background-color: white; padding: 30px; border: 2px solid var(--color-orange); border-radius: 8px; text-align: center;">
             <h2 style="color: var(--color-orange); margin-bottom: 20px;">You are not in a guild</h2>
-            <p style="margin-bottom: 30px; color: var(--color-light-gray);">Create a new guild or join an existing one to get started!</p>
+            <p style="margin-bottom: 30px; color: #666;">Create a new guild or join an existing one to get started!</p>
             
             <div style="display: flex; gap: 20px; justify-content: center;">
               <button id="create-guild-btn" style="padding: 15px 30px; background: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">
@@ -192,7 +192,7 @@ function renderGuildWarPage() {
           type="text" 
           id="team-search" 
           placeholder="Search by team number or hero name..." 
-          style="width: 100%; max-width: 400px; padding: 10px; border: 2px solid var(--color-orange); border-radius: 4px; background: var(--color-dark-gray); color: var(--color-white);"
+          style="width: 100%; max-width: 400px; padding: 10px; border: 2px solid var(--color-orange); border-radius: 4px; background: white; color: black;"
         />
       </div>
       
@@ -273,44 +273,44 @@ function renderGuildWarPage() {
 
       <!-- Find Team Modal -->
       <div id="find-team-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; overflow-y: auto;">
-        <div style="max-width: 900px; margin: 50px auto; background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px;">
+        <div style="max-width: 900px; margin: 50px auto; background: white; border: 2px solid var(--color-orange); border-radius: 8px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h2 style="color: var(--color-orange); margin: 0;">Find Team to Fight</h2>
-            <button onclick="closeFindTeamModal()" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+            <button type="button" onclick="closeFindTeamModal()" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
           </div>
           
           <!-- Previous Battles Section -->
-          <div id="battle-history-section" style="margin-bottom: 25px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px solid #333;">
+          <div id="battle-history-section" style="margin-bottom: 25px; padding: 15px; background: #f5f5f5; border-radius: 8px; border: 1px solid #ddd;">
             <h3 style="color: #4FC3F7; margin: 0 0 15px 0; font-size: 16px;">📜 Previous Battles</h3>
             <div id="battle-history-list">
-              <p style="color: #888; text-align: center;">Loading battle history...</p>
+              <p style="color: #666; text-align: center;">Loading battle history...</p>
             </div>
           </div>
           
           <div style="margin-bottom: 20px;">
-            <h3 style="color: var(--color-white); margin-bottom: 10px;">Select Your 3 Heroes:</h3>
+            <h3 style="color: #333; margin-bottom: 10px;">Select Your 3 Heroes:</h3>
             <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
               <!-- Slot 1 -->
-              <div id="find-team-slot-0" onclick="selectFinderHero(0)" style="width: 100px; height: 100px; border: 2px dashed #666; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #1a1a1a;">
-                <span style="color: #666;">+ Hero 1</span>
+              <div id="find-team-slot-0" onclick="selectFinderHero(0)" style="width: 100px; height: 100px; border: 2px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white;">
+                <span style="color: #999;">+ Hero 1</span>
               </div>
               <!-- Slot 2 -->
-              <div id="find-team-slot-1" onclick="selectFinderHero(1)" style="width: 100px; height: 100px; border: 2px dashed #666; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #1a1a1a;">
-                <span style="color: #666;">+ Hero 2</span>
+              <div id="find-team-slot-1" onclick="selectFinderHero(1)" style="width: 100px; height: 100px; border: 2px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white;">
+                <span style="color: #999;">+ Hero 2</span>
               </div>
               <!-- Slot 3 -->
-              <div id="find-team-slot-2" onclick="selectFinderHero(2)" style="width: 100px; height: 100px; border: 2px dashed #666; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #1a1a1a;">
-                <span style="color: #666;">+ Hero 3</span>
+              <div id="find-team-slot-2" onclick="selectFinderHero(2)" style="width: 100px; height: 100px; border: 2px dashed #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: white;">
+                <span style="color: #999;">+ Hero 3</span>
               </div>
             </div>
             
-            <button onclick="searchForTeam()" style="width: 100%; padding: 12px; background: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;">
+            <button type="button" onclick="searchForTeam()" style="width: 100%; padding: 12px; background: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer;">
               Find Members with These Heroes
             </button>
           </div>
           
           <div id="find-team-results" style="display: none;">
-            <h3 style="color: var(--color-white); margin-bottom: 10px;">Available Members:</h3>
+            <h3 style="color: #333; margin-bottom: 10px;">Available Members:</h3>
             <div id="find-team-results-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;">
               <!-- Results will be shown here -->
             </div>
@@ -1438,8 +1438,51 @@ async function loadGuildWarTeams() {
     return;
   }
 
+  // Get username
+  let username = null;
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (userInfo) {
+    try {
+      username = JSON.parse(userInfo).username;
+    } catch (e) {
+      console.error('Error parsing user info', e);
+    }
+  }
+
+  if (!username) {
+    loadingDiv.style.display = 'none';
+    contentDiv.style.display = 'block';
+    contentDiv.innerHTML = '<p style="color: #d32f2f; text-align: center;">Please login to view Guild War.</p>';
+    return;
+  }
+
+  // Check if user is in a guild
   try {
-    const response = await fetch('/api/guildwar');
+    const guildResponse = await fetch(`/api/guilds/member/${username}`);
+    const guildData = await guildResponse.json();
+    
+    if (!guildData.success || !guildData.data) {
+      // User is not in a guild - show the same message as Guild Info page
+      loadingDiv.style.display = 'none';
+      contentDiv.style.display = 'block';
+      contentDiv.innerHTML = `
+        <div style="background-color: white; padding: 30px; border: 2px solid var(--color-orange); border-radius: 8px; text-align: center; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: var(--color-orange); margin-bottom: 20px;">You are not in a guild</h2>
+          <p style="margin-bottom: 30px; color: #666;">Create a new guild or join an existing one to access Guild War!</p>
+          
+          <button type="button" onclick="window.location.href='/guild/info'" style="padding: 15px 40px; background: var(--color-orange); color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: 600; cursor: pointer;">
+            Back to Guild Info
+          </button>
+        </div>
+      `;
+      return;
+    }
+  } catch (error) {
+    console.error('Error checking guild membership:', error);
+  }
+
+  try {
+    const response = await fetch(`/api/guildwar?username=${encodeURIComponent(username)}`);
     if (!response.ok) {
       throw new Error('Failed to fetch enemy teams');
     }
@@ -1636,7 +1679,7 @@ function renderGuildWarTeamCard(team) {
               value="${speed}" 
               placeholder="Spd"
               onchange="updateTeamSpeed('${team._id}', this.value)"
-              style="width: 25px; padding: 1px; font-size: 9px; border: 1px solid #666; border-radius: 2px; background: #333; color: white; text-align: center;"
+              style="width: 25px; padding: 1px; font-size: 9px; border: 1px solid #ccc; border-radius: 2px; background: white; color: #333; text-align: center;"
             >
             <button 
               onclick="toggleTeamSpeedType('${team._id}')"
@@ -1800,7 +1843,7 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
         <div style="flex-shrink: 0;">
           <div 
             onclick="openRingSelector(${teamNumber}, '${teamId}', '${hero.heroname}')"
-            style="cursor: pointer; width: 30px; height: 30px; background: #2a2a2a; border: 1px solid var(--color-orange); border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden;"
+            style="cursor: pointer; width: 30px; height: 30px; background: white; border: 1px solid var(--color-orange); border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden;"
             title="Click to change ring"
           >
             ${hero.ring ?
@@ -1875,6 +1918,22 @@ async function addHeroToTeam(teamNumber, teamId) {
     return;
   }
 
+  // Get username
+  let username = null;
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (userInfo) {
+    try {
+      username = JSON.parse(userInfo).username;
+    } catch (e) {
+      console.error('Error parsing user info', e);
+    }
+  }
+
+  if (!username) {
+    alert('Please login first');
+    return;
+  }
+
   try {
     // If team doesn't exist, create it first
     if (!teamId || teamId === 'null') {
@@ -1882,6 +1941,7 @@ async function addHeroToTeam(teamNumber, teamId) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username: username,
           teamNumber: teamNumber,
           heroes: []
         })
@@ -2196,12 +2256,29 @@ async function selectHeroFromDatabase(heroname, heroPicture) {
     let teamId = currentHeroSelectorTeamId;
     let currentHeroes = [];
 
+    // Get username
+    let username = null;
+    const userInfo = localStorage.getItem('lgm_user_info');
+    if (userInfo) {
+      try {
+        username = JSON.parse(userInfo).username;
+      } catch (e) {
+        console.error('Error parsing user info', e);
+      }
+    }
+
+    if (!username) {
+      alert('Please login first');
+      return;
+    }
+
     // If team doesn't exist, create it first
     if (!teamId || teamId === 'null') {
       const createResponse = await fetch('/api/guildwar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username: username,
           teamNumber: currentHeroSelectorTeamNumber,
           heroes: []
         })
@@ -2764,10 +2841,27 @@ async function resetGuildWar() {
   
   if (!confirmed) return;
   
+  // Get username
+  let username = null;
+  const userInfo = localStorage.getItem('lgm_user_info');
+  if (userInfo) {
+    try {
+      username = JSON.parse(userInfo).username;
+    } catch (e) {
+      console.error('Error parsing user info', e);
+    }
+  }
+
+  if (!username) {
+    alert('Please login first');
+    return;
+  }
+  
   try {
     const response = await fetch('/api/guildwar/reset', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
     });
     
     const data = await response.json();
@@ -2892,13 +2986,24 @@ async function loadBattleHistory(username, enemyTeamNumber) {
       const resultText = battle.result === 'victory' ? 'Victory' : battle.result === 'defeat' ? 'Defeat' : 'Pending';
       const battleDate = new Date(battle.battleDate).toLocaleDateString();
       const speedValue = battle.speed || '';
+      const heroComments = battle.heroComments || {};
+      
+      // Build hero list with comments
+      const heroesWithComments = (battle.heroDetails || []).map(h => {
+        const heroName = h.heroName;
+        const comment = heroComments[heroName];
+        if (comment) {
+          return `<span style="color: #333;">${heroName}</span> <span style="color: #2196F3; font-size: 11px;">(💬 ${comment})</span>`;
+        }
+        return heroName;
+      }).join(', ') || battle.targetHeroes.join(', ');
       
       return `
-        <div style="background: #2a2a2a; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid ${resultColor};">
+        <div style="background: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid ${resultColor}; border: 1px solid #ddd;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div style="flex: 1;">
               <span style="color: var(--color-orange); font-weight: bold; font-size: 14px;">${battle.targetUsername}</span>
-              <span style="color: #888; font-size: 12px; margin-left: 10px;">${battleDate}</span>
+              <span style="color: #666; font-size: 12px; margin-left: 10px;">${battleDate}</span>
             </div>
             <div style="display: flex; gap: 8px; align-items: center;">
               <label style="display: flex; align-items: center; cursor: pointer; font-size: 13px; color: #4CAF50;">
@@ -2923,13 +3028,13 @@ async function loadBattleHistory(username, enemyTeamNumber) {
               value="${speedValue}" 
               placeholder="e.g., 245.5"
               onblur="updateBattleSpeed('${battle._id}', this.value)"
-              style="flex: 1; padding: 4px 8px; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; color: white; font-size: 12px; max-width: 120px;"
+              style="flex: 1; padding: 4px 8px; background: white; border: 1px solid #ccc; border-radius: 4px; color: #333; font-size: 12px; max-width: 120px;"
             />
           </div>
-          <div style="color: #aaa; font-size: 12px; margin-bottom: 6px;">
-            ${(battle.heroDetails || []).map(h => h.heroName).join(', ') || battle.targetHeroes.join(', ')}
+          <div style="color: #666; font-size: 12px; margin-bottom: 6px;">
+            ${heroesWithComments}
           </div>
-          ${battle.comment ? `<div style="color: #4FC3F7; font-size: 12px; font-style: italic; padding: 6px; background: #1a1a1a; border-radius: 4px; border-left: 2px solid #4FC3F7;">💬 ${battle.comment}</div>` : ''}
+          ${battle.comment ? `<div style="color: var(--color-orange); font-size: 12px; font-weight: bold; padding: 8px; background: #fff3e0; border-radius: 4px; border-left: 3px solid var(--color-orange); margin-top: 8px;">📝 Strategy: ${battle.comment}</div>` : ''}
         </div>
       `;
     }).join('');
@@ -3088,19 +3193,19 @@ function renderFinderHeroGrid(heroes, slotIndex) {
   const grid = document.getElementById('hero-selector-grid');
 
   if (heroes.length === 0) {
-    grid.innerHTML = '<p style="color: #888; grid-column: 1/-1; text-align: center;">No heroes found</p>';
+    grid.innerHTML = '<p style="color: #666; grid-column: 1/-1; text-align: center;">No heroes found</p>';
     return;
   }
 
   grid.innerHTML = heroes.map(hero => `
     <div 
       onclick="confirmFinderHero('${hero.heroname}', '${hero.heroPicture}', ${slotIndex})"
-      style="background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 10px; cursor: pointer; transition: all 0.2s; text-align: center;"
-      onmouseover="this.style.borderColor='var(--color-orange)'; this.style.background='#252525';"
-      onmouseout="this.style.borderColor='#333'; this.style.background='#1a1a1a';"
+      style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 8px; cursor: pointer; transition: all 0.3s; text-align: center;"
+      onmouseover="this.style.borderColor='var(--color-orange)'; this.style.boxShadow='0 2px 8px rgba(255,102,0,0.3)';"
+      onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none';"
     >
-      <img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 60px; height: 60px; border-radius: 4px; object-fit: cover; margin-bottom: 8px;">
-      <div style="color: var(--color-white); font-size: 12px; font-weight: 500;">${hero.heroname}</div>
+      <img src="${hero.heroPicture}" alt="${hero.heroname}" style="width: 100%; height: auto; max-width: 100px; object-fit: contain; border-radius: 6px; margin: 0 auto 6px; display: block;">
+      <div style="color: #333; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${hero.heroname}">${hero.heroname}</div>
     </div>
   `).join('');
 }
@@ -3116,10 +3221,11 @@ function confirmFinderHero(heroname, heroPicture, slotIndex) {
   slot.innerHTML = `
     <div style="text-align: center;">
       <img src="${heroPicture}" style="width: 50px; height: 50px; border-radius: 4px; object-fit: cover; margin-bottom: 4px;">
-      <div style="font-size: 10px; color: white;">${heroname}</div>
+      <div style="font-size: 10px; color: #333; font-weight: 600;">${heroname}</div>
     </div>
   `;
   slot.style.border = '2px solid var(--color-orange)';
+  slot.style.background = 'white';
 
   // Close hero selector
   document.getElementById('hero-selector-modal').style.display = 'none';
@@ -3175,25 +3281,25 @@ async function searchForTeam() {
       window.guildWarTeamData[`team_${index}`] = matchedHeroes;
 
       return `
-        <div style="background: #1a1a1a; padding: 15px; border-radius: 4px; border: 1px solid #333;">
+        <div style="background: white; padding: 15px; border-radius: 4px; border: 1px solid #ddd;">
           <div style="color: var(--color-orange); font-weight: bold; font-size: 16px; margin-bottom: 8px;">${displayName}</div>
-          <div style="color: #ccc; font-size: 13px; margin-bottom: 10px;">Has:</div>
+          <div style="color: #666; font-size: 13px; margin-bottom: 10px;">Has:</div>
           ${matchedHeroes.map(h => {
         const heroName = h.heroName || 'Unknown';
         const starLevel = h.starLevel || 0;
         const ring = h.ring || 'No Ring';
 
         return `
-              <div style="background: #2a2a2a; padding: 8px; margin-bottom: 6px; border-radius: 4px; border-left: 3px solid var(--color-orange);">
-                <div style="color: white; font-weight: 600; font-size: 14px;">${heroName}</div>
-                <div style="color: #aaa; font-size: 12px; margin-top: 4px;">
+              <div style="background: #f5f5f5; padding: 8px; margin-bottom: 6px; border-radius: 4px; border-left: 3px solid var(--color-orange);">
+                <div style="color: #333; font-weight: 600; font-size: 14px;">${heroName}</div>
+                <div style="color: #666; font-size: 12px; margin-top: 4px;">
                   <span style="color: #ffd700;">★ ${starLevel}</span> / 
                   <span style="color: #4FC3F7;">${ring}</span>
                 </div>
               </div>
             `;
       }).join('')}
-          <button onclick="pickGuildWarTeam('${team.username}', '${heroNames.join(',')}', 'team_${index}')" 
+          <button type="button" onclick="event.preventDefault(); event.stopPropagation(); pickGuildWarTeam('${team.username}', '${heroNames.join(',')}', 'team_${index}'); return false;" 
                   style="margin-top: 10px; background: var(--color-orange); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; width: 100%;">
             Pick This Team
           </button>
@@ -3205,6 +3311,169 @@ async function searchForTeam() {
     console.error('Error searching for team:', error);
     listDiv.innerHTML = `<p style="color: #d32f2f; grid-column: 1/-1; text-align: center;">Error: ${error.message}</p>`;
   }
+}
+
+/**
+ * Show comment popup for team selection
+ */
+async function showCommentPopup(targetUsername, heroDetails, enemyZone, enemyTeamNumber) {
+  return new Promise((resolve) => {
+    // Remove any existing modal first
+    const existingModal = document.getElementById('comment-popup-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'comment-popup-modal';
+    modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10002; overflow-y: auto; align-items: center; justify-content: center;';
+    
+    // Get hero images
+    const heroesHTML = heroDetails.map((hero, index) => {
+      const heroName = hero.heroName || 'Unknown';
+      const starLevel = hero.starLevel || 0;
+      const ring = hero.ring || 'No Ring';
+      const imageUrl = `/images/heroes/${encodeURIComponent(heroName)}.jpg`;
+      
+      return `
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; border: 2px solid var(--color-orange);">
+          <div style="text-align: center; margin-bottom: 10px;">
+            <img src="${imageUrl}" 
+                 alt="${heroName}" 
+                 onerror="this.onerror=null; this.src='/images/heroes/default.jpg';"
+                 style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px; background: white; border: 2px solid #ddd;">
+          </div>
+          <div style="text-align: center; margin-bottom: 8px;">
+            <div style="color: var(--color-orange); font-weight: bold; font-size: 14px;">${heroName}</div>
+            <div style="color: #666; font-size: 12px; margin-top: 4px;">
+              <span style="color: #ffd700;">★ ${starLevel}</span> / 
+              <span style="color: #4FC3F7;">${ring}</span>
+            </div>
+          </div>
+          <textarea 
+            id="hero-comment-${index}" 
+            placeholder="Add comment for ${heroName}..."
+            style="width: 100%; min-height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; resize: vertical; font-family: inherit;"
+          ></textarea>
+        </div>
+      `;
+    }).join('');
+    
+    modal.innerHTML = `
+      <div style="max-width: 800px; width: 90%; margin: 20px auto; background: white; border: 2px solid var(--color-orange); border-radius: 8px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="color: var(--color-orange); margin: 0;">Add Battle Comments</h2>
+          <button id="close-comment-popup" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancel</button>
+        </div>
+        
+        <div style="background: #e3f2fd; padding: 12px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+          <div style="color: #1976d2; font-weight: bold; font-size: 14px;">Target: ${targetUsername}</div>
+          <div style="color: #666; font-size: 13px; margin-top: 4px;">Enemy: ${enemyZone}, Team ${enemyTeamNumber}</div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+          ${heroesHTML}
+        </div>
+        
+        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 2px solid var(--color-orange); margin-bottom: 20px;">
+          <label style="display: block; color: var(--color-orange); font-weight: bold; font-size: 14px; margin-bottom: 8px;">
+            Team Comment (Overall Strategy)
+          </label>
+          <textarea 
+            id="team-comment" 
+            placeholder="Add overall team strategy or notes..."
+            style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; resize: vertical; font-family: inherit;"
+          ></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="cancel-comment-btn" style="padding: 10px 24px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">Cancel</button>
+          <button id="confirm-comment-btn" style="padding: 10px 24px; background: var(--color-orange); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;">Confirm Pick</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle close
+    const closeModal = (e) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (document.body.contains(modal)) {
+        document.body.removeChild(modal);
+      }
+      resolve(null);
+    };
+    
+    // Add event listeners with preventDefault
+    const closeBtn = document.getElementById('close-comment-popup');
+    const cancelBtn = document.getElementById('cancel-comment-btn');
+    const confirmBtn = document.getElementById('confirm-comment-btn');
+    
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      };
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      };
+    }
+    
+    // Handle confirm
+    if (confirmBtn) {
+      confirmBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const heroComments = {};
+        heroDetails.forEach((hero, index) => {
+          const commentEl = document.getElementById(`hero-comment-${index}`);
+          if (commentEl) {
+            const comment = commentEl.value.trim();
+            if (comment) {
+              heroComments[hero.heroName] = comment;
+            }
+          }
+        });
+        
+        const teamCommentEl = document.getElementById('team-comment');
+        const teamComment = teamCommentEl ? teamCommentEl.value.trim() : '';
+        
+        if (document.body.contains(modal)) {
+          document.body.removeChild(modal);
+        }
+        resolve({
+          heroComments,
+          teamComment
+        });
+      };
+    }
+    
+    // Close on overlay click
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      }
+    };
+    
+    // Prevent any form submission
+    modal.addEventListener('submit', (e) => {
+      e.preventDefault();
+      return false;
+    });
+  });
 }
 
 /**
@@ -3235,11 +3504,11 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
   const enemyZone = findTeamState.zoneName || 'Unknown Zone';
   const enemyTeamNumber = findTeamState.teamNumber || 0;
 
-  // Ask for comment
-  const comment = prompt(`Add a comment for this battle (optional):\n\nTarget: ${targetUsername}\nEnemy: ${enemyZone}, Team ${enemyTeamNumber}`, '');
+  // Show comment popup modal
+  const commentData = await showCommentPopup(targetUsername, heroDetails, enemyZone, enemyTeamNumber);
   
   // User cancelled
-  if (comment === null) {
+  if (!commentData) {
     return;
   }
 
@@ -3255,7 +3524,8 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
         heroDetails,
         enemyZone,
         enemyTeamNumber,
-        comment: comment.trim()
+        comment: commentData.teamComment,
+        heroComments: commentData.heroComments
       })
     });
 
@@ -3278,7 +3548,8 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
         heroDetails,
         enemyZone,
         enemyTeamNumber,
-        comment: comment.trim()
+        comment: commentData.teamComment,
+        heroComments: commentData.heroComments
       })
     });
 
@@ -3343,7 +3614,7 @@ async function loadGWarNoti() {
       let enemyName = '';
       if (enemyTeamNumber && enemyTeamNumber !== '?') {
         try {
-          const teamResponse = await fetch(`/api/guildwar/number/${enemyTeamNumber}`);
+          const teamResponse = await fetch(`/api/guildwar/number/${enemyTeamNumber}?username=${encodeURIComponent(username)}`);
           const teamData = await teamResponse.json();
           if (teamData.success && teamData.data) {
             enemyName = teamData.data.enemyName || '';
@@ -3353,44 +3624,61 @@ async function loadGWarNoti() {
         }
       }
 
+      const heroComments = selection.heroComments || {};
+      const teamComment = selection.comment || '';
+
       contentDiv.innerHTML = `
-        <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; border: 2px solid var(--color-orange); max-width: 600px; margin: 0 auto;">
-          <h2 style="color: var(--color-orange); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px;">Current Target</h2>
+        <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid var(--color-orange); max-width: 600px; margin: 0 auto;">
+          <h2 style="color: var(--color-orange); margin-top: 0; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Current Target</h2>
           
-          <div style="margin-top: 20px; background: #2a2a2a; padding: 15px; border-radius: 6px; border-left: 4px solid #ff6600;">
+          <div style="margin-top: 20px; background: #f5f5f5; padding: 15px; border-radius: 6px; border-left: 4px solid #ff6600;">
             <div style="font-size: 16px; color: #4FC3F7; margin-bottom: 8px; font-weight: bold;">🎯 Enemy Team</div>
-            <div style="font-size: 18px; color: white; margin-bottom: 5px;">
+            <div style="font-size: 18px; color: #333; margin-bottom: 5px;">
               <span style="color: var(--color-orange); font-weight: bold;">${enemyZone}</span>, Team <span style="color: var(--color-orange); font-weight: bold;">${enemyTeamNumber}</span>
             </div>
-            ${enemyName ? `<div style="font-size: 14px; color: #aaa; margin-top: 5px;">Enemy: <span style="color: white;">${enemyName}</span></div>` : ''}
+            ${enemyName ? `<div style="font-size: 14px; color: #666; margin-top: 5px;">Enemy: <span style="color: #333;">${enemyName}</span></div>` : ''}
           </div>
           
           <div style="margin-top: 20px;">
             <div style="font-size: 16px; color: #4FC3F7; margin-bottom: 8px; font-weight: bold;">👤 Target Player</div>
-            <div style="font-size: 18px; color: white; margin-bottom: 5px;">
+            <div style="font-size: 18px; color: #333; margin-bottom: 5px;">
               <span style="color: var(--color-orange); font-weight: bold;">${selection.targetUsername}</span>
             </div>
             <div style="color: #888; font-size: 12px;">Selected on: ${new Date(selection.updatedAt).toLocaleString()}</div>
           </div>
           
-          <h3 style="color: white; margin-top: 25px; font-size: 16px;">⚔️ Target Heroes:</h3>
+          ${teamComment ? `
+          <div style="margin-top: 20px; background: #fff3e0; padding: 15px; border-radius: 6px; border-left: 4px solid var(--color-orange);">
+            <div style="font-size: 14px; color: var(--color-orange); margin-bottom: 8px; font-weight: bold;">📝 Team Strategy</div>
+            <div style="color: #333; font-size: 13px; line-height: 1.5; white-space: pre-wrap;">${teamComment}</div>
+          </div>
+          ` : ''}
+          
+          <h3 style="color: #333; margin-top: 25px; font-size: 16px;">⚔️ Target Heroes:</h3>
           <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
             ${heroDetails.length > 0 ? heroDetails.map(hero => {
         const heroName = hero.heroName || 'Unknown';
         const starLevel = hero.starLevel || 0;
         const ring = hero.ring || 'No Ring';
+        const heroComment = heroComments[heroName] || '';
 
         return `
-                <div style="background: #2a2a2a; padding: 12px; border-radius: 6px; border-left: 3px solid var(--color-orange);">
-                  <div style="color: white; font-weight: bold; font-size: 15px; margin-bottom: 6px;">${heroName}</div>
-                  <div style="color: #aaa; font-size: 13px;">
+                <div style="background: white; padding: 12px; border-radius: 6px; border-left: 3px solid var(--color-orange); border: 1px solid #ddd;">
+                  <div style="color: #333; font-weight: bold; font-size: 15px; margin-bottom: 6px;">${heroName}</div>
+                  <div style="color: #666; font-size: 13px; margin-bottom: ${heroComment ? '8px' : '0'};">
                     <span style="color: #ffd700;">★ ${starLevel}</span> / 
                     <span style="color: #4FC3F7;">${ring}</span>
                   </div>
+                  ${heroComment ? `
+                  <div style="background: #e3f2fd; padding: 8px; border-radius: 4px; margin-top: 8px; border-left: 3px solid #2196F3;">
+                    <div style="color: #1976d2; font-size: 11px; font-weight: bold; margin-bottom: 4px;">💬 Note:</div>
+                    <div style="color: #333; font-size: 12px; line-height: 1.4; white-space: pre-wrap;">${heroComment}</div>
+                  </div>
+                  ` : ''}
                 </div>
               `;
       }).join('') : targetHeroes.map(heroName => `
-              <div style="background: #333; padding: 15px; border-radius: 6px; color: white; border: 1px solid #444; text-align: center;">
+              <div style="background: white; padding: 15px; border-radius: 6px; color: #333; border: 1px solid #ddd; text-align: center;">
                 <div style="font-weight: bold;">${heroName}</div>
               </div>
             `).join('')}

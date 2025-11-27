@@ -185,6 +185,26 @@ async function removeAssistantFromGuild(guildId, assistantName) {
 }
 
 /**
+ * Get guild by member username
+ * @param {string} username - Username to search for
+ * @returns {Promise<Object|null>} - Guild object or null if not found
+ */
+async function getGuildByMember(username) {
+  const db = getDatabase();
+  
+  // Check if user is guild master, assistant, or member
+  const guild = await db.collection(COLLECTION_NAME).findOne({
+    $or: [
+      { guildMasterName: username },
+      { guildAssistants: username },
+      { guildMemberNames: username }
+    ]
+  });
+  
+  return guild;
+}
+
+/**
  * Get user's role in guild
  * @param {string} username - Username to check
  * @returns {Promise<string|null>} - 'gmaster', 'gassist', 'gmember', or null if not in guild
@@ -224,6 +244,7 @@ module.exports = {
   getAllGuilds,
   getGuildById,
   getGuildByName,
+  getGuildByMember,
   verifyGuildPassword,
   addMemberToGuild,
   removeMemberFromGuild,

@@ -561,16 +561,16 @@ async function showDatabaseImageSelector(callback) {
         return `
           <div class="db-image-item" data-image-url="${imageUrl}" style="cursor: pointer; text-align: center; padding: 10px; border: 2px solid transparent; border-radius: 4px; transition: all 0.2s;">
             <img src="${imageUrl}" alt="${heroName}" style="width: 120px; height: 120px; object-fit: contain; border-radius: 4px; background-color: #f9f9f9; border: 1px solid #ddd;">
-            <p style="color: white; margin-top: 8px; font-size: 12px;">${heroName}</p>
+            <p style="color: #333; margin-top: 8px; font-size: 12px;">${heroName}</p>
           </div>
         `;
       }).join('');
 
     modal.innerHTML = `
-      <div style="background: #2a2a2a; padding: 30px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto;">
+      <div style="background: white; padding: 30px; border-radius: 8px; max-width: 90%; max-height: 90%; overflow: auto; border: 2px solid var(--color-orange);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h2 style="color: var(--color-orange); margin: 0;">Select Hero Image from Database</h2>
-          <button id="close-db-selector" style="padding: 8px 16px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+          <button id="close-db-selector" style="padding: 8px 16px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
         </div>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; max-height: 60vh; overflow-y: auto;">

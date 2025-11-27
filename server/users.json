@@ -35,5 +35,13 @@
     "passwordHash": "$2b$10$SE5hc40KMoxDTbKM5xV2PexQ.3.AykIJvHhPD6is891L34yibZy7O",
     "role": "gmember",
     "createdAt": "2025-11-26T04:28:02.825Z"
+  },
+  {
+    "id": "faa23c35-c123-4539-93ee-dcf1c39d6013",
+    "username": "steve",
+    "ign": "steven",
+    "passwordHash": "$2b$10$TC/2tK.Twpa9FmeJNJJ1deDs1Q0xZUSEaM6kvpnMGfIR6jl/lgHdC",
+    "role": "gmember",
+    "createdAt": "2025-11-27T05:27:51.595Z"
   }
 ]
