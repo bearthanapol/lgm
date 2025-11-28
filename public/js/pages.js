@@ -536,46 +536,15 @@ function renderMyTeamPage() {
   return `
     <div class="page-content">
       <h1>My Team</h1>
-      <p>Manage your hero collection with the Hero Recognition Tool.</p>
-        <div style="margin-top: 20px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
-          <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎮 Hero Recognition Tool</h2>
-          <p style="margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
-          <p style="margin: 0 0 20px 0; font-size: 13px; opacity: 0.85; background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 6px; display: inline-block;">
-            ⚠️ OCR works with English text only. Please change your game language to English before taking screenshots for best results.
-          </p>
-          
-          <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-            <label for="team-upload" class="action-button" style="cursor: pointer; display: inline-block;">
-              📸 Upload Screenshot
-            </label>
-            <input type="file" id="team-upload" accept="image/*" style="display: none;" onchange="handleTeamUpload(this, event)">
-            
-            <button type="button" onclick="event.preventDefault(); saveUserTeam(); return false;" class="action-button" style="background: #4CAF50;">
-              💾 Save Team
-            </button>
-          </div>
-          
-          <div style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
-            <label style="display: inline-flex; align-items: center; cursor: pointer;">
-              <input type="checkbox" id="use-ocr-checkbox" checked style="margin-right: 8px;">
-              Use OCR (Better Accuracy)
-            </label>
-          </div>
-        </div>
+      <p>Select the heroes you own and set their star levels and ring types.</p>
+      
+      <div id="team-loading" style="text-align: center; margin-top: 40px; opacity: 1; transition: opacity 0.3s;">
+        <div class="spinner"></div>
+        <p>Loading heroes...</p>
+      </div>
 
-        <div id="team-loading" style="text-align: center; margin-top: 40px; position: absolute; width: 100%; opacity: 0; pointer-events: none; transition: opacity 0.2s;">
-          <div class="spinner"></div>
-          <p>Loading your team...</p>
-        </div>
-
-        <div id="team-heroes" style="opacity: 0; min-height: 200px; transition: opacity 0.3s;">
-          <div id="team-stats" style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;"></div>
-          <div id="team-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; min-height: 200px;"></div>
-        </div>
-
-        <div id="team-empty" style="opacity: 0; text-align: center; padding: 40px; color: #666; pointer-events: none; transition: opacity 0.2s;">
-          <p>No heroes saved yet. Use the Hero Recognition Tool to add heroes to your team!</p>
-        </div>
+      <div id="team-heroes-grid" style="opacity: 0; margin-top: 20px; transition: opacity 0.3s;">
+        <!-- Heroes will be loaded here -->
       </div>
     </div>
   `;
@@ -593,6 +562,156 @@ function renderGWarNotiPage() {
       </div>
     </div>
   `;
+}
+
+/**
+ * Load all heroes and user's collection for My Team page
+ */
+async function loadMyTeamCollection() {
+  console.log('[My Team] Loading hero collection...');
+  
+  const loadingDiv = document.getElementById('team-loading');
+  const gridDiv = document.getElementById('team-heroes-grid');
+  
+  if (!loadingDiv || !gridDiv) {
+    console.error('[My Team] Required elements not found');
+    return;
+  }
+  
+  try {
+    // Get user info
+    const userInfo = JSON.parse(localStorage.getItem('lgm_user_info') || '{}');
+    const username = userInfo.username;
+    
+    if (!username) {
+      console.error('[My Team] No username found');
+      loadingDiv.innerHTML = '<p style="color: #d32f2f;">Please login to manage your team.</p>';
+      return;
+    }
+    
+    // Load all heroes from database
+    const heroesResponse = await fetch('/api/heroes');
+    if (!heroesResponse.ok) {
+      throw new Error('Failed to load heroes');
+    }
+    const heroesData = await heroesResponse.json();
+    const allHeroes = heroesData.data || [];
+    
+    // Load user's team
+    let userTeam = {};
+    try {
+      const teamResponse = await fetch(`/api/team/${username}`);
+      if (teamResponse.ok) {
+        const teamData = await teamResponse.json();
+        if (teamData.success && teamData.data && teamData.data.heroes) {
+          // Convert array to object for easy lookup
+          teamData.data.heroes.forEach(hero => {
+            userTeam[hero.heroName || hero.name] = {
+              starLevel: hero.starLevel || 0,
+              ring: hero.ring || ''
+            };
+          });
+        }
+      }
+    } catch (e) {
+      console.log('[My Team] No existing team found');
+    }
+    
+    // Set grid styles first (before content)
+    gridDiv.style.display = 'grid';
+    gridDiv.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
+    gridDiv.style.gap = '15px';
+    
+    // Render hero cards
+    gridDiv.innerHTML = allHeroes.map(hero => {
+      const heroName = hero.name || hero.heroname;
+      const isOwned = userTeam[heroName] !== undefined;
+      const starLevel = isOwned ? userTeam[heroName].starLevel : 0;
+      const ring = isOwned ? userTeam[heroName].ring : '';
+      
+      return `
+        <div class="hero-card" data-hero-name="${heroName}" style="background: white; border: 2px solid ${isOwned ? 'var(--color-orange)' : '#ddd'}; border-radius: 8px; padding: 15px; cursor: pointer; transition: all 0.2s;">
+          <div style="text-align: center; margin-bottom: 10px; width: 100px; height: 100px; margin-left: auto; margin-right: auto; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+            ${(hero.heropicture || hero.heroPicture || hero.imageurl || hero.imageUrl) ? `
+              <img src="${hero.heropicture || hero.heroPicture || hero.imageurl || hero.imageUrl}" 
+                   alt="${heroName}"
+                   onload="this.style.opacity='1';"
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                   style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px; opacity: 0; transition: opacity 0.2s; position: absolute;">
+              <div style="width: 100px; height: 100px; display: none; align-items: center; justify-content: center; color: #999; font-size: 12px;">No Image</div>
+            ` : `
+              <div style="color: #999; font-size: 12px;">No Image</div>
+            `}
+          </div>
+          
+          <div style="text-align: center; margin-bottom: 10px;">
+            <strong style="font-size: 14px; color: #333;">${heroName}</strong>
+            <div style="font-size: 18px; margin-top: 4px;">
+              ${(() => {
+                const level = Math.max(0, Math.min(12, starLevel));
+                if (level === 0) {
+                  return '<span style="color: #FFD700;">★★★★★★</span>';
+                } else if (level >= 1 && level <= 6) {
+                  const blue = level;
+                  const yellow = 6 - level;
+                  return '<span style="color: #4169E1;">' + '★'.repeat(blue) + '</span>' +
+                         '<span style="color: #FFD700;">' + '★'.repeat(yellow) + '</span>';
+                } else {
+                  const red = level - 6;
+                  const blue = 6 - red;
+                  return '<span style="color: #DC143C;">' + '★'.repeat(red) + '</span>' +
+                         '<span style="color: #4169E1;">' + '★'.repeat(blue) + '</span>';
+                }
+              })()}
+            </div>
+          </div>
+          
+          <button type="button" class="toggle-owned-btn" onclick="event.stopPropagation(); toggleHeroOwned(this, '${heroName}');" 
+                  style="width: 100%; padding: 8px; background: ${isOwned ? '#4CAF50' : '#999'}; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-bottom: 10px;">
+            ${isOwned ? '✓ Owned' : 'Not Owned'}
+          </button>
+          
+          <div class="hero-details" style="display: ${isOwned ? 'block' : 'none'};">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div style="flex: 0 0 auto;">
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">C:</label>
+                <input type="number" class="hero-stars" value="${starLevel}" min="0" max="12" 
+                       placeholder="0-12"
+                       onchange="updateHeroStars(this, '${heroName}')"
+                       style="width: 50px; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center;">
+              </div>
+              
+              <div style="flex: 1;">
+                <label style="font-size: 12px; color: #666; display: block; margin-bottom: 4px;">Ring:</label>
+                <select class="hero-ring" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                  <option value="" ${ring === '' ? 'selected' : ''}>None</option>
+                  <option value="ATK" ${ring === 'ATK' ? 'selected' : ''}>ATK</option>
+                  <option value="DEF" ${ring === 'DEF' ? 'selected' : ''}>DEF</option>
+                  <option value="HP" ${ring === 'HP' ? 'selected' : ''}>HP</option>
+                  <option value="SPD" ${ring === 'SPD' ? 'selected' : ''}>SPD</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    // Use requestAnimationFrame for smooth fade-in
+    requestAnimationFrame(() => {
+      loadingDiv.style.opacity = '0';
+      setTimeout(() => {
+        loadingDiv.style.display = 'none';
+        gridDiv.style.opacity = '1';
+      }, 300);
+    });
+    
+    console.log('[My Team] Loaded', allHeroes.length, 'heroes');
+    
+  } catch (error) {
+    console.error('[My Team] Error loading collection:', error);
+    loadingDiv.innerHTML = '<p style="color: #d32f2f;">Failed to load heroes. Please try again.</p>';
+  }
 }
 
 async function loadUserTeamFromPages() {
@@ -3982,6 +4101,145 @@ function displayRecognizedHeroes(heroes) {
   gridDiv.addEventListener('click', handleRemoveButtonClick);
   
   console.log('[Display Heroes] Complete! Displayed', heroes.length, 'heroes');
+}
+
+/**
+ * Toggle hero owned status
+ */
+function toggleHeroOwned(button, heroName) {
+  const card = button.closest('.hero-card');
+  const details = card.querySelector('.hero-details');
+  const isOwned = button.textContent.includes('✓ Owned');
+  
+  if (isOwned) {
+    // Mark as not owned
+    button.textContent = 'Not Owned';
+    button.style.background = '#999';
+    card.style.borderColor = '#ddd';
+    details.style.display = 'none';
+  } else {
+    // Mark as owned
+    button.textContent = '✓ Owned';
+    button.style.background = '#4CAF50';
+    card.style.borderColor = 'var(--color-orange)';
+    details.style.display = 'block';
+  }
+}
+
+/**
+ * Generate colored star display based on star level
+ * 0 = 6 yellow, 1-6 = blue + yellow, 7-12 = red + blue
+ */
+function generateStarDisplay(starLevel) {
+  const level = Math.max(0, Math.min(12, parseInt(starLevel) || 0));
+  let stars = '';
+  
+  if (level === 0) {
+    // 0 stars = 6 yellow
+    stars = '<span style="color: #FFD700;">★★★★★★</span>';
+  } else if (level >= 1 && level <= 6) {
+    // 1-6 stars = blue + yellow
+    const blueStars = level;
+    const yellowStars = 6 - level;
+    stars = '<span style="color: #4169E1;">' + '★'.repeat(blueStars) + '</span>' +
+            '<span style="color: #FFD700;">' + '★'.repeat(yellowStars) + '</span>';
+  } else if (level >= 7 && level <= 12) {
+    // 7-12 stars = red + blue
+    const redStars = level - 6;
+    const blueStars = 6 - redStars;
+    stars = '<span style="color: #DC143C;">' + '★'.repeat(redStars) + '</span>' +
+            '<span style="color: #4169E1;">' + '★'.repeat(blueStars) + '</span>';
+  }
+  
+  return stars;
+}
+
+/**
+ * Update hero stars display when star level changes
+ */
+function updateHeroStars(input, heroName) {
+  const card = input.closest('.hero-card');
+  const starDisplay = card.querySelector('strong').nextElementSibling;
+  const starLevel = parseInt(input.value) || 0;
+  
+  // Update the star display with colored stars
+  starDisplay.innerHTML = generateStarDisplay(starLevel);
+}
+
+/**
+ * Save user's hero collection
+ */
+async function saveMyTeamCollection() {
+  console.log('[My Team] Saving collection...');
+  
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('lgm_user_info') || '{}');
+    const username = userInfo.username;
+    
+    if (!username) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.error('Please login to save your team');
+      }
+      return;
+    }
+    
+    // Collect all owned heroes
+    const heroCards = document.querySelectorAll('.hero-card');
+    const ownedHeroes = [];
+    
+    heroCards.forEach((card, index) => {
+      const button = card.querySelector('.toggle-owned-btn');
+      const isOwned = button.textContent.includes('✓ Owned');
+      
+      if (isOwned) {
+        const heroName = card.dataset.heroName;
+        const starLevel = parseInt(card.querySelector('.hero-stars').value) || 0;
+        const ring = card.querySelector('.hero-ring').value || '';
+        
+        ownedHeroes.push({
+          position: index + 1,
+          heroName: heroName,
+          starLevel: starLevel,
+          ring: ring,
+          rarity: 'Unknown' // Will be filled by server
+        });
+      }
+    });
+    
+    console.log('[My Team] Saving', ownedHeroes.length, 'heroes');
+    
+    // Save to server
+    const response = await fetch('/api/team/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: username,
+        heroes: ownedHeroes
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to save team');
+    }
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.success(`Saved ${ownedHeroes.length} heroes to your collection!`);
+      }
+    } else {
+      throw new Error(data.error || 'Failed to save team');
+    }
+    
+  } catch (error) {
+    console.error('[My Team] Error saving collection:', error);
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Failed to save collection: ' + error.message);
+    }
+  }
 }
 
 /**

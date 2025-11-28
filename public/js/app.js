@@ -135,60 +135,21 @@ router.addRoute('/guild/adventure', () => {
 router.addRoute('/team/my-team', () => {
   console.log('My Team route handler called');
   
-  // CRITICAL: If upload is in progress, skip re-render completely
-  if (window.isUploadingTeam) {
-    console.log('[SKIP] Upload in progress, blocking route re-render');
-    return;
-  }
-  
-  // Check if we're already on this page with heroes displayed - if so, skip re-render
-  const currentPage = document.querySelector('.page-content h1');
-  const heroesDiv = document.getElementById('team-heroes');
-  console.log('[DEBUG] Route check:', {
-    currentPageExists: !!currentPage,
-    currentPageText: currentPage?.textContent,
-    heroesDivExists: !!heroesDiv,
-    heroesDivDisplay: heroesDiv?.style.display,
-    recognizedHeroesCount: window.recognizedHeroes?.length || 0
-  });
-  
-  if (currentPage && currentPage.textContent === 'My Team' && 
-      heroesDiv && heroesDiv.style.display !== 'none' && 
-      window.recognizedHeroes && window.recognizedHeroes.length > 0) {
-    console.log('[SKIP] Already on My Team page with heroes displayed, skipping re-render');
-    return;
-  }
-  
-  console.log('[RENDER] Rendering My Team page');
   const pageContent = renderMyTeamPage();
   renderMainLayout('team', 'my-team', pageContent);
 
-  // Load content after rendering
+  // Load hero collection after rendering
   setTimeout(async () => {
-    console.log('setTimeout executed');
     try {
-      // Attach screenshot upload handler
-      attachScreenshotUploadHandler();
-
-      // Load user's saved team if exists
-      console.log('Checking if loadUserTeamFromPages exists:', typeof loadUserTeamFromPages);
-      if (typeof loadUserTeamFromPages === 'function') {
-        console.log('Calling loadUserTeamFromPages...');
-        try {
-          await loadUserTeamFromPages();
-          console.log('loadUserTeamFromPages completed');
-        } catch (loadError) {
-          console.error('Error calling loadUserTeamFromPages:', loadError);
-          console.error('Stack trace:', loadError.stack);
-        }
+      if (typeof loadMyTeamCollection === 'function') {
+        await loadMyTeamCollection();
       } else {
-        console.error('loadUserTeamFromPages function not found');
+        console.error('loadMyTeamCollection function not found');
       }
     } catch (error) {
-      console.error('Error in my-team route:', error);
-      console.error('Stack trace:', error.stack);
+      console.error('Error loading my team collection:', error);
     }
-  }, 500);
+  }, 100);
 });
 
 router.addRoute('/team/gwar-noti', () => {
