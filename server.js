@@ -13,6 +13,7 @@ const newsRoutes = require('./server/newsRoutes');
 const uploadRoutes = require('./server/uploadRoutes');
 const teamRoutes = require('./server/teamRoutes');
 const debugImageRoutes = require('./server/debugImageRoutes');
+const analyticsRoutes = require('./server/analyticsRoutes');
 const { connectToDatabase, closeDatabaseConnection } = require('./server/database');
 
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/news', newsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/debug', debugImageRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Basic health check route
 app.get('/api/health', (req, res) => {

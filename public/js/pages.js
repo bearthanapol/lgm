@@ -362,19 +362,11 @@ function renderAdventureExpeditionPage() {
 function renderAdminPage() {
   return `
     <div class="page-content">
-      <h1>Admin Panel</h1>
-      <p>Manage heroes, news, and game updates here.</p>
+      <h1>Manage Heroes</h1>
+      <p>Add, edit, and manage hero database.</p>
       
-      <!-- Admin Tabs -->
-      <div style="margin-top: 30px; border-bottom: 2px solid var(--color-orange);">
-        <button class="admin-tab active" data-tab="heroes" style="padding: 12px 24px; background: var(--color-orange); color: white; border: none; cursor: pointer; font-size: 16px; font-weight: 600; margin-right: 5px;">Manage Heroes</button>
-        <button class="admin-tab" data-tab="news" style="padding: 12px 24px; background: #f5f5f5; color: #000; border: none; cursor: pointer; font-size: 16px; font-weight: 600;">News & Updates</button>
-      </div>
-      
-      <!-- Heroes Tab -->
-      <div id="heroes-tab" class="admin-tab-content">
-        <div style="margin-top: 30px;">
-          <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Add New Hero</h2>
+      <div style="margin-top: 30px;">
+        <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Add New Hero</h2>
           <div style="background-color: #f5f5f5; padding: 30px; border: 2px solid var(--color-orange); border-radius: 4px;">
             <form id="add-hero-form">
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -421,10 +413,18 @@ function renderAdminPage() {
             <p style="color: #666666;">Loading heroes...</p>
           </div>
         </div>
-      </div>
+    </div>
+  `;
+}
+
+// Admin News Page
+function renderAdminNewsPage() {
+  return `
+    <div class="page-content">
+      <h1>News & Updates</h1>
+      <p>Create and manage news and game updates.</p>
       
-      <!-- News Tab -->
-      <div id="news-tab" class="admin-tab-content" style="display: none;">
+      <div style="margin-top: 30px;">
         <div style="margin-top: 30px;">
           <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">Create News/Update</h2>
           <div style="background-color: #f5f5f5; padding: 30px; border: 2px solid var(--color-orange); border-radius: 4px;">
@@ -470,6 +470,60 @@ function renderAdminPage() {
           <h2 style="color: var(--color-orange); font-size: 24px; margin-bottom: 15px;">News List</h2>
           <div id="news-list" style="background-color: #f5f5f5; padding: 20px; border: 2px solid var(--color-orange); border-radius: 4px;">
             <p style="color: #666666;">Loading news...</p>
+          </div>
+        </div>
+    </div>
+  `;
+}
+
+// Admin Analytics Page
+function renderAdminAnalyticsPage() {
+  return `
+    <div class="page-content">
+      <h1>Analytics</h1>
+      <p>View website statistics and user activity.</p>
+      
+      <div style="margin-top: 30px;">
+        <div style="margin-top: 30px;">
+          <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+            <button class="analytics-period-btn active" data-period="week" style="padding: 10px 20px; background: var(--color-orange); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Last 7 Days</button>
+            <button class="analytics-period-btn" data-period="month" style="padding: 10px 20px; background: #f5f5f5; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">Last 30 Days</button>
+          </div>
+          
+          <div id="analytics-loading" style="text-align: center; padding: 40px;">
+            <p style="color: #666;">Loading analytics...</p>
+          </div>
+          
+          <div id="analytics-content" style="display: none;">
+            <!-- Summary Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">Total Users</div>
+                <div id="stat-total-users" style="font-size: 32px; font-weight: bold;">0</div>
+              </div>
+              
+              <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 8px; color: white;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">New Users</div>
+                <div id="stat-new-users" style="font-size: 32px; font-weight: bold;">0</div>
+              </div>
+              
+              <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 8px; color: white;">
+                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">Total Page Views</div>
+                <div id="stat-page-views" style="font-size: 32px; font-weight: bold;">0</div>
+              </div>
+            </div>
+            
+            <!-- Page Access Stats -->
+            <div style="background: white; padding: 20px; border: 2px solid var(--color-orange); border-radius: 8px; margin-bottom: 30px;">
+              <h3 style="color: var(--color-orange); margin-top: 0;">Page Access Statistics</h3>
+              <div id="page-access-stats"></div>
+            </div>
+            
+            <!-- Daily Access Chart -->
+            <div style="background: white; padding: 20px; border: 2px solid var(--color-orange); border-radius: 8px;">
+              <h3 style="color: var(--color-orange); margin-top: 0;">Daily Access Trend</h3>
+              <div id="daily-access-chart"></div>
+            </div>
           </div>
         </div>
       </div>

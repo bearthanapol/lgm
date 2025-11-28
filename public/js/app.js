@@ -195,23 +195,58 @@ router.addRoute('/admin/manage', () => {
 
   // Load content after rendering
   setTimeout(async () => {
-    // Set up tab switching
-    setupAdminTabs();
-
     // Load heroes
     await loadHeroes();
-
-    // Load news
-    await loadNews();
 
     // Attach hero form handler
     attachHeroFormHandler();
 
-    // Attach news form handler
-    attachNewsFormHandler();
-
     // Attach image preview handler
     attachImagePreviewHandler();
+  }, 100);
+});
+
+// Admin News Route
+router.addRoute('/admin/news', () => {
+  const userInfo = authManager.getUserInfo();
+  const userRole = userInfo ? (userInfo.role || 'gmember') : 'gmember';
+  
+  if (userRole !== 'admin') {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Access denied. Admin privileges required.');
+    }
+    router.navigate('/home');
+    return;
+  }
+
+  const pageContent = renderAdminNewsPage();
+  renderMainLayout('admin', 'news', pageContent);
+
+  setTimeout(async () => {
+    await loadNews();
+    attachNewsFormHandler();
+  }, 100);
+});
+
+// Admin Analytics Route
+router.addRoute('/admin/analytics', () => {
+  const userInfo = authManager.getUserInfo();
+  const userRole = userInfo ? (userInfo.role || 'gmember') : 'gmember';
+  
+  if (userRole !== 'admin') {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Access denied. Admin privileges required.');
+    }
+    router.navigate('/home');
+    return;
+  }
+
+  const pageContent = renderAdminAnalyticsPage();
+  renderMainLayout('admin', 'analytics', pageContent);
+
+  setTimeout(async () => {
+    await loadAnalytics('week');
+    setupAnalyticsPeriodButtons();
   }, 100);
 });
 
@@ -440,36 +475,6 @@ function setupGlobalErrorHandlers() {
   });
 }
 
-
-/**
- * Set up admin tab switching
- */
-function setupAdminTabs() {
-  const tabButtons = document.querySelectorAll('.admin-tab');
-
-  tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const tabName = button.getAttribute('data-tab');
-
-      // Update button styles
-      tabButtons.forEach(btn => {
-        if (btn === button) {
-          btn.style.background = 'var(--color-orange)';
-          btn.style.color = 'white';
-          btn.classList.add('active');
-        } else {
-          btn.style.background = '#f5f5f5';
-          btn.style.color = '#000';
-          btn.classList.remove('active');
-        }
-      });
-
-      // Show/hide tab content
-      document.getElementById('heroes-tab').style.display = tabName === 'heroes' ? 'block' : 'none';
-      document.getElementById('news-tab').style.display = tabName === 'news' ? 'block' : 'none';
-    });
-  });
-}
 
 /**
  * Attach image preview handler for hero image upload (direct upload, no crop)
@@ -1097,4 +1102,137 @@ async function loadUserTeam() {
   } catch (error) {
     console.log('No saved team found');
   }
+}
+
+
+/**
+ * Load analytics data
+ */
+async function loadAnalytics(period = 'week') {
+  const loadingDiv = document.getElementById('analytics-loading');
+  const contentDiv = document.getElementById('analytics-content');
+  
+  if (!loadingDiv || !contentDiv) return;
+  
+  try {
+    loadingDiv.style.display = 'block';
+    contentDiv.style.display = 'none';
+    
+    const response = await fetch(`/api/analytics/stats?period=${period}`);
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error);
+    }
+    
+    const stats = data.data;
+    
+    // Update summary cards
+    document.getElementById('stat-total-users').textContent = stats.totalUsers;
+    document.getElementById('stat-new-users').textContent = stats.newUsers;
+    document.getElementById('stat-page-views').textContent = stats.totalPageViews;
+    
+    // Render page access stats
+    renderPageAccessStats(stats.pageAccessStats);
+    
+    // Render daily access chart
+    renderDailyAccessChart(stats.dailyAccessCounts);
+    
+    loadingDiv.style.display = 'none';
+    contentDiv.style.display = 'block';
+    
+  } catch (error) {
+    console.error('Error loading analytics:', error);
+    loadingDiv.innerHTML = `<p style="color: #d32f2f;">Error loading analytics: ${error.message}</p>`;
+  }
+}
+
+/**
+ * Render page access statistics table
+ */
+function renderPageAccessStats(stats) {
+  const container = document.getElementById('page-access-stats');
+  if (!container) return;
+  
+  if (stats.length === 0) {
+    container.innerHTML = '<p style="color: #666;">No page access data available.</p>';
+    return;
+  }
+  
+  container.innerHTML = `
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f5f5f5; border-bottom: 2px solid var(--color-orange);">
+          <th style="padding: 12px; text-align: left; color: #333;">Page</th>
+          <th style="padding: 12px; text-align: center; color: #333;">Total Views</th>
+          <th style="padding: 12px; text-align: center; color: #333;">Unique Users</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${stats.map(stat => `
+          <tr style="border-bottom: 1px solid #ddd;">
+            <td style="padding: 12px; color: #333;">${stat.pageUrl}</td>
+            <td style="padding: 12px; text-align: center; color: #333; font-weight: 600;">${stat.count}</td>
+            <td style="padding: 12px; text-align: center; color: #333;">${stat.uniqueUsers}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+/**
+ * Render daily access chart (simple bar chart)
+ */
+function renderDailyAccessChart(dailyCounts) {
+  const container = document.getElementById('daily-access-chart');
+  if (!container) return;
+  
+  if (dailyCounts.length === 0) {
+    container.innerHTML = '<p style="color: #666;">No daily access data available.</p>';
+    return;
+  }
+  
+  const maxCount = Math.max(...dailyCounts.map(d => d.count));
+  
+  container.innerHTML = `
+    <div style="display: flex; align-items: flex-end; gap: 8px; height: 200px; padding: 10px 0;">
+      ${dailyCounts.map(day => {
+        const height = (day.count / maxCount) * 100;
+        return `
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; background: var(--color-orange); height: ${height}%; min-height: 2px; border-radius: 4px 4px 0 0;" title="${day.date}: ${day.count} views"></div>
+            <div style="font-size: 10px; color: #666; margin-top: 8px; transform: rotate(-45deg); white-space: nowrap;">${new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <div style="text-align: center; margin-top: 20px; color: #666; font-size: 12px;">
+      Hover over bars to see exact counts
+    </div>
+  `;
+}
+
+/**
+ * Setup analytics period buttons
+ */
+function setupAnalyticsPeriodButtons() {
+  const buttons = document.querySelectorAll('.analytics-period-btn');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      // Update active state
+      buttons.forEach(b => {
+        b.style.background = '#f5f5f5';
+        b.style.color = '#000';
+        b.classList.remove('active');
+      });
+      btn.style.background = 'var(--color-orange)';
+      btn.style.color = 'white';
+      btn.classList.add('active');
+      
+      // Load analytics for selected period
+      const period = btn.dataset.period;
+      await loadAnalytics(period);
+    });
+  });
 }

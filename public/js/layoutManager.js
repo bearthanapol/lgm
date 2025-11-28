@@ -66,6 +66,8 @@ function renderSidebar(section, activePage = '') {
   } else if (section === 'admin') {
     sidebarLinks = `
       <li><a href="/admin/manage" class="sidebar-link ${activePage === 'manage' ? 'active' : ''}" data-page="manage">Manage Heroes</a></li>
+      <li><a href="/admin/news" class="sidebar-link ${activePage === 'news' ? 'active' : ''}" data-page="news">News & Updates</a></li>
+      <li><a href="/admin/analytics" class="sidebar-link ${activePage === 'analytics' ? 'active' : ''}" data-page="analytics">Analytics</a></li>
     `;
   }
 
@@ -82,7 +84,24 @@ function renderSidebar(section, activePage = '') {
  * @returns {string} - HTML string for the content area
  */
 function renderContent(pageContent) {
-  return pageContent;
+  return `
+    ${pageContent}
+    
+    <!-- Footer -->
+    <div style="margin-top: 60px; padding: 30px 20px; background: #f5f5f5; border-top: 2px solid var(--color-orange); border-radius: 8px;">
+      <div style="max-width: 1200px; margin: 0 auto;">
+        <h3 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 18px;">⚠️ Disclaimer</h3>
+        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 0;">
+          <strong>LazyGuildMasters</strong> is a fan-made, independent website and is not affiliated with Netmarble. 
+          <strong>Seven Knights Re:BIRTH</strong> and related assets are trademarks of Netmarble Corporation. 
+          All trademarks and images are used for reference only.
+        </p>
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #999; font-size: 12px;">
+          © ${new Date().getFullYear()} LazyGuildMasters - Fan Community Project
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 /**
