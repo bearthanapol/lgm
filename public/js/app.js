@@ -134,6 +134,32 @@ router.addRoute('/guild/adventure', () => {
 // Team Section Routes
 router.addRoute('/team/my-team', () => {
   console.log('My Team route handler called');
+  
+  // CRITICAL: If upload is in progress, skip re-render completely
+  if (window.isUploadingTeam) {
+    console.log('[SKIP] Upload in progress, blocking route re-render');
+    return;
+  }
+  
+  // Check if we're already on this page with heroes displayed - if so, skip re-render
+  const currentPage = document.querySelector('.page-content h1');
+  const heroesDiv = document.getElementById('team-heroes');
+  console.log('[DEBUG] Route check:', {
+    currentPageExists: !!currentPage,
+    currentPageText: currentPage?.textContent,
+    heroesDivExists: !!heroesDiv,
+    heroesDivDisplay: heroesDiv?.style.display,
+    recognizedHeroesCount: window.recognizedHeroes?.length || 0
+  });
+  
+  if (currentPage && currentPage.textContent === 'My Team' && 
+      heroesDiv && heroesDiv.style.display !== 'none' && 
+      window.recognizedHeroes && window.recognizedHeroes.length > 0) {
+    console.log('[SKIP] Already on My Team page with heroes displayed, skipping re-render');
+    return;
+  }
+  
+  console.log('[RENDER] Rendering My Team page');
   const pageContent = renderMyTeamPage();
   renderMainLayout('team', 'my-team', pageContent);
 

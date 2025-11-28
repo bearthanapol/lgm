@@ -1,13 +1,12 @@
 const { MongoClient } = require('mongodb');
 
-// MongoDB connection string
-// MongoDB connection string
-const MONGO_URI = process.env.MONGO_URI;
-const DB_NAME = 'lgm_gaming';
+// MongoDB connection string - supports both MONGODB_URI (Render) and MONGO_URI (local)
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+const DB_NAME = process.env.DB_NAME || 'lgm_gaming';
 
 if (!MONGO_URI) {
-  console.warn('⚠ Warning: MONGO_URI environment variable is not set.');
-  console.warn('⚠ Database connection will fail. Please check your .env file.');
+  console.warn('⚠ Warning: MONGODB_URI or MONGO_URI environment variable is not set.');
+  console.warn('⚠ Database connection will fail. Please check your environment variables.');
 }
 
 let client = null;

@@ -24,6 +24,76 @@ const upload = multer({
 });
 
 /**
+ * POST /api/team/recognize - Recognize heroes from uploaded image
+ */
+router.post('/recognize', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No image provided'
+      });
+    }
+
+    console.log('Processing image for hero recognition...');
+
+    // Get all heroes from database
+    const heroDatabase = await getAllHeroes();
+    console.log(`Loaded ${heroDatabase.length} heroes from database`);
+
+    if (heroDatabase.length === 0) {
+      return res.json({
+        success: true,
+        heroes: [],
+        message: 'No heroes in database. Please add heroes first.'
+      });
+    }
+
+    // Check if user wants to use OCR method
+    const useOCR = req.body.useOCR !== 'false';
+
+    let matchedHeroes;
+
+    if (useOCR) {
+      console.log('Using OCR-based recognition...');
+      matchedHeroes = await processScreenshotWithOCR(
+        req.file.buffer,
+        heroDatabase
+      );
+    } else {
+      console.log('Using pixel-matching recognition...');
+      matchedHeroes = await processScreenshotAndMatch(
+        req.file.buffer,
+        heroDatabase,
+        0.90
+      );
+    }
+
+    // Format heroes for frontend
+    const heroes = matchedHeroes.map((hero, index) => ({
+      name: hero.heroName || 'Unknown',
+      starLevel: hero.starLevel || 0,
+      rarity: hero.rarity || '',
+      imageUrl: hero.imageUrl || `/images/heroes/${encodeURIComponent(hero.heroName || 'default')}.jpg`,
+      position: index + 1
+    }));
+
+    res.json({
+      success: true,
+      heroes: heroes,
+      message: `Recognized ${heroes.filter(h => h.name !== 'Unknown').length} heroes`
+    });
+
+  } catch (error) {
+    console.error('Error recognizing heroes:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to recognize heroes'
+    });
+  }
+});
+
+/**
  * POST /api/team/upload - Upload screenshot and match heroes
  */
 router.post('/upload', upload.single('screenshot'), async (req, res) => {

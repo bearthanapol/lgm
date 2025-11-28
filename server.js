@@ -44,9 +44,38 @@ app.use('/api/team', teamRoutes);
 app.use('/api/debug', debugImageRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// Basic health check route
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'LGM Gaming Website API is running' });
+// Health check route for monitoring
+app.get('/api/health', async (req, res) => {
+  try {
+    const { getDatabase } = require('./server/database');
+    const db = getDatabase();
+    await db.command({ ping: 1 });
+    res.json({ 
+      status: 'ok', 
+      message: 'LGM Gaming Website API is running',
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error', 
+      message: 'Service unavailable',
+      database: 'disconnected',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Root health check (for Render.com)
+app.get('/health', async (req, res) => {
+  try {
+    const { getDatabase } = require('./server/database');
+    const db = getDatabase();
+    await db.command({ ping: 1 });
+    res.status(200).send('OK');
+  } catch (error) {
+    res.status(503).send('Service Unavailable');
+  }
 });
 
 // SPA catch-all route - serve index.html for all non-API routes

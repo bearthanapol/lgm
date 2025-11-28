@@ -539,15 +539,18 @@ function renderMyTeamPage() {
       <p>Manage your hero collection with the Hero Recognition Tool.</p>
         <div style="margin-top: 20px; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; text-align: center;">
           <h2 style="margin: 0 0 15px 0; font-size: 28px;">🎮 Hero Recognition Tool</h2>
-          <p style="margin: 0 0 20px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
+          <p style="margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">Upload screenshots, manually edit heroes, set star ratings (0-12), and save your team!</p>
+          <p style="margin: 0 0 20px 0; font-size: 13px; opacity: 0.85; background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 6px; display: inline-block;">
+            ⚠️ OCR works with English text only. Please change your game language to English before taking screenshots for best results.
+          </p>
           
           <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
             <label for="team-upload" class="action-button" style="cursor: pointer; display: inline-block;">
               📸 Upload Screenshot
             </label>
-            <input type="file" id="team-upload" accept="image/*" style="display: none;" onchange="handleTeamUpload(this)">
+            <input type="file" id="team-upload" accept="image/*" style="display: none;" onchange="handleTeamUpload(this, event)">
             
-            <button onclick="saveUserTeam()" class="action-button" style="background: #4CAF50;">
+            <button type="button" onclick="event.preventDefault(); saveUserTeam(); return false;" class="action-button" style="background: #4CAF50;">
               💾 Save Team
             </button>
           </div>
@@ -560,17 +563,17 @@ function renderMyTeamPage() {
           </div>
         </div>
 
-        <div id="team-loading" style="text-align: center; margin-top: 40px;">
+        <div id="team-loading" style="text-align: center; margin-top: 40px; position: absolute; width: 100%; opacity: 0; pointer-events: none; transition: opacity 0.2s;">
           <div class="spinner"></div>
           <p>Loading your team...</p>
         </div>
 
-        <div id="team-heroes" style="display: none;">
+        <div id="team-heroes" style="opacity: 0; min-height: 200px; transition: opacity 0.3s;">
           <div id="team-stats" style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;"></div>
-          <div id="team-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
+          <div id="team-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; min-height: 200px;"></div>
         </div>
 
-        <div id="team-empty" style="display: none; text-align: center; padding: 40px; color: #666;">
+        <div id="team-empty" style="opacity: 0; text-align: center; padding: 40px; color: #666; pointer-events: none; transition: opacity 0.2s;">
           <p>No heroes saved yet. Use the Hero Recognition Tool to add heroes to your team!</p>
         </div>
       </div>
@@ -608,6 +611,12 @@ async function loadUserTeamFromPages() {
       heroesDiv: !!heroesDiv,
       emptyDiv: !!emptyDiv
     });
+    return;
+  }
+
+  // Check if heroes are already displayed (from upload) - if so, skip loading
+  if (window.recognizedHeroes && window.recognizedHeroes.length > 0 && heroesDiv.style.opacity === '1') {
+    console.log('[pages.js] Heroes already displayed from upload, skipping server load');
     return;
   }
 
@@ -662,8 +671,14 @@ async function loadUserTeamFromPages() {
     if (!response.ok) {
       if (response.status === 404) {
         console.log('[pages.js] No team found for user');
-        if (loadingDiv) loadingDiv.style.display = 'none';
-        if (emptyDiv) emptyDiv.style.display = 'block';
+        if (loadingDiv) {
+          loadingDiv.style.opacity = '0';
+          loadingDiv.style.pointerEvents = 'none';
+        }
+        if (emptyDiv) {
+          emptyDiv.style.opacity = '1';
+          emptyDiv.style.pointerEvents = 'auto';
+        }
         return;
       }
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -672,7 +687,10 @@ async function loadUserTeamFromPages() {
     const data = await response.json();
     console.log('[pages.js] Team data received:', data);
 
-    if (loadingDiv) loadingDiv.style.display = 'none';
+    if (loadingDiv) {
+      loadingDiv.style.opacity = '0';
+      loadingDiv.style.pointerEvents = 'none';
+    }
 
     if (data.success && data.data && data.data.heroes && data.data.heroes.length > 0) {
       const team = data.data;
@@ -745,10 +763,13 @@ async function loadUserTeamFromPages() {
         attachTeamStarHandlers();
       }
 
-      if (heroesDiv) heroesDiv.style.display = 'block';
+      if (heroesDiv) heroesDiv.style.opacity = '1';
     } else {
       console.log('[pages.js] No heroes in team data');
-      if (emptyDiv) emptyDiv.style.display = 'block';
+      if (emptyDiv) {
+        emptyDiv.style.opacity = '1';
+        emptyDiv.style.pointerEvents = 'auto';
+      }
     }
   } catch (error) {
     console.error('[pages.js] Error loading team:', error);
@@ -3745,5 +3766,319 @@ async function loadGWarNoti() {
   } catch (error) {
     console.error('Error loading notification:', error);
     contentDiv.innerHTML = `<p style="color: #d32f2f; text-align: center;">Error: ${error.message}</p>`;
+  }
+}
+
+
+/**
+ * Handle team screenshot upload
+ */
+function handleTeamUpload(input, event) {
+  // Prevent any default behavior
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  console.log('[Team Upload] Starting upload...');
+  
+  if (!input.files || !input.files[0]) {
+    console.log('[Team Upload] No file selected');
+    return false;
+  }
+
+  const file = input.files[0];
+  console.log('[Team Upload] File selected:', file.name);
+  
+  const useOCR = document.getElementById('use-ocr-checkbox')?.checked || false;
+
+  // Show loading state using opacity for smooth transition
+  const loadingDiv = document.getElementById('team-loading');
+  const heroesDiv = document.getElementById('team-heroes');
+  const emptyDiv = document.getElementById('team-empty');
+  const gridDiv = document.getElementById('team-grid');
+
+  if (loadingDiv) {
+    loadingDiv.style.opacity = '1';
+    loadingDiv.style.pointerEvents = 'auto';
+  }
+  if (emptyDiv) {
+    emptyDiv.style.opacity = '0';
+    emptyDiv.style.pointerEvents = 'none';
+  }
+  if (heroesDiv) {
+    heroesDiv.style.opacity = '0.3';
+  }
+  if (gridDiv) {
+    gridDiv.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">Processing image...</div>';
+  }
+  
+  // Process upload asynchronously without blocking
+  processTeamUpload(file, useOCR, loadingDiv, heroesDiv, emptyDiv, input);
+  
+  return false;
+}
+
+/**
+ * Process team upload asynchronously
+ */
+async function processTeamUpload(file, useOCR, loadingDiv, heroesDiv, emptyDiv, input) {
+  // Set flag to prevent route re-renders during upload
+  window.isUploadingTeam = true;
+  console.log('[Team Upload] Set isUploadingTeam flag to true');
+
+  try {
+    console.log('[Team Upload] Creating FormData...');
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('useOCR', useOCR);
+
+    console.log('[Team Upload] Sending to server...');
+    
+    // Upload and process image
+    const response = await fetch('/api/team/recognize', {
+      method: 'POST',
+      body: formData
+    });
+
+    console.log('[Team Upload] Response received:', response.status);
+    
+    const data = await response.json();
+    console.log('[Team Upload] Data:', data);
+
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to process image');
+    }
+
+    // Display recognized heroes
+    if (data.heroes && data.heroes.length > 0) {
+      console.log('[Team Upload] Displaying', data.heroes.length, 'heroes');
+      displayRecognizedHeroes(data.heroes);
+      if (typeof toastManager !== 'undefined') {
+        toastManager.success(`Recognized ${data.heroes.length} heroes!`);
+      }
+    } else {
+      console.log('[Team Upload] No heroes recognized');
+      if (typeof toastManager !== 'undefined') {
+        toastManager.warning('No heroes recognized. Try manual entry.');
+      }
+      if (loadingDiv) {
+        loadingDiv.style.opacity = '0';
+        loadingDiv.style.pointerEvents = 'none';
+      }
+      if (emptyDiv) {
+        emptyDiv.style.opacity = '1';
+        emptyDiv.style.pointerEvents = 'auto';
+      }
+    }
+
+  } catch (error) {
+    console.error('[Team Upload] Error:', error);
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Failed to process image: ' + error.message);
+    }
+    if (loadingDiv) {
+      loadingDiv.style.opacity = '0';
+      loadingDiv.style.pointerEvents = 'none';
+    }
+    if (emptyDiv) {
+      emptyDiv.style.opacity = '1';
+      emptyDiv.style.pointerEvents = 'auto';
+    }
+  } finally {
+    // Reset file input
+    if (input) input.value = '';
+    // Clear upload flag after a delay to ensure display is complete
+    setTimeout(() => {
+      window.isUploadingTeam = false;
+      console.log('[Team Upload] Cleared isUploadingTeam flag');
+    }, 1000);
+    console.log('[Team Upload] Upload complete');
+  }
+}
+
+/**
+ * Display recognized heroes in editable grid
+ */
+function displayRecognizedHeroes(heroes) {
+  console.log('[Display Heroes] Starting to display', heroes.length, 'heroes');
+  
+  const heroesDiv = document.getElementById('team-heroes');
+  const gridDiv = document.getElementById('team-grid');
+  const loadingDiv = document.getElementById('team-loading');
+
+  if (!heroesDiv || !gridDiv) {
+    console.error('[Display Heroes] Required elements not found');
+    return;
+  }
+
+  // Store heroes data globally BEFORE updating DOM
+  window.recognizedHeroes = heroes;
+
+  // Update DOM using requestAnimationFrame for smooth rendering
+  console.log('[Display Heroes] Updating DOM...');
+  
+  // Hide loading using opacity
+  if (loadingDiv) {
+    loadingDiv.style.opacity = '0';
+    loadingDiv.style.pointerEvents = 'none';
+  }
+  
+  // Show heroes with smooth fade-in
+  if (heroesDiv) {
+    heroesDiv.style.opacity = '1';
+  }
+  
+  // Build HTML string with loading="eager" and fixed dimensions to prevent layout shift
+  const heroHTML = heroes.map((hero, index) => {
+    const isUnknown = !hero.name || hero.name === 'Unknown' || hero.name === '';
+    const imageContent = isUnknown 
+      ? '<div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;">No Image</div>'
+      : `<img src="${hero.imageUrl || '/images/heroes/default.jpg'}" 
+             alt="${hero.name}" 
+             loading="eager"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+             onload="this.style.opacity='1';"
+             style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px; opacity: 0; transition: opacity 0.15s;">
+         <div style="width: 100px; height: 100px; display: none; align-items: center; justify-content: center; color: #999; font-size: 14px;">No Image</div>`;
+    
+    return `
+    <div style="background: white; padding: 15px; border: 2px solid var(--color-orange); border-radius: 8px;">
+      <div style="text-align: center; margin-bottom: 10px; width: 100px; height: 100px; margin-left: auto; margin-right: auto; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+        ${imageContent}
+      </div>
+      
+      <input type="text" 
+             id="hero-name-${index}" 
+             value="${hero.name || ''}" 
+             placeholder="Hero Name"
+             style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+      
+      <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 8px;">
+        <label style="font-size: 12px; color: #666;">Stars:</label>
+        <input type="number" 
+               id="hero-stars-${index}" 
+               value="${hero.starLevel || 0}" 
+               min="0" 
+               max="12"
+               style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+      </div>
+      
+      <button type="button" class="remove-hero-btn" data-hero-index="${index}"
+              style="width: 100%; padding: 6px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+        Remove
+      </button>
+    </div>
+  `;
+  }).join('');
+  
+  // Update DOM content
+  gridDiv.innerHTML = heroHTML;
+  
+  // Attach event listeners to remove buttons using event delegation
+  gridDiv.removeEventListener('click', handleRemoveButtonClick);
+  gridDiv.addEventListener('click', handleRemoveButtonClick);
+  
+  console.log('[Display Heroes] Complete! Displayed', heroes.length, 'heroes');
+}
+
+/**
+ * Handle remove button clicks using event delegation
+ */
+function handleRemoveButtonClick(e) {
+  if (e.target.classList.contains('remove-hero-btn')) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const index = parseInt(e.target.dataset.heroIndex);
+    console.log('[Remove Hero] Removing hero at index:', index);
+    
+    if (!window.recognizedHeroes) return false;
+    
+    window.recognizedHeroes.splice(index, 1);
+    displayRecognizedHeroes(window.recognizedHeroes);
+    
+    if (window.recognizedHeroes.length === 0) {
+      document.getElementById('team-heroes').style.display = 'none';
+      document.getElementById('team-empty').style.display = 'block';
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * Remove hero from team (legacy - kept for compatibility)
+ */
+function removeHeroFromTeam(index) {
+  console.log('[Remove Hero] Legacy function called for index:', index);
+  return false;
+}
+
+/**
+ * Save user team
+ */
+async function saveUserTeam() {
+  const userInfo = authManager.getUserInfo();
+  const username = userInfo ? userInfo.username : null;
+
+  if (!username) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Please login first');
+    }
+    return;
+  }
+
+  // Collect hero data from inputs
+  const heroes = [];
+  const gridDiv = document.getElementById('team-grid');
+  
+  if (!gridDiv) return;
+
+  const heroCards = gridDiv.querySelectorAll('[id^="hero-name-"]');
+  heroCards.forEach((input, index) => {
+    const name = input.value.trim();
+    const starsInput = document.getElementById(`hero-stars-${index}`);
+    const starLevel = starsInput ? parseInt(starsInput.value) || 0 : 0;
+
+    if (name) {
+      heroes.push({
+        name,
+        starLevel,
+        imageUrl: window.recognizedHeroes?.[index]?.imageUrl || ''
+      });
+    }
+  });
+
+  if (heroes.length === 0) {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.warning('No heroes to save');
+    }
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/team/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, heroes })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.success('Team saved successfully!');
+      }
+    } else {
+      throw new Error(data.error || 'Failed to save team');
+    }
+  } catch (error) {
+    console.error('Error saving team:', error);
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Failed to save team: ' + error.message);
+    }
   }
 }
