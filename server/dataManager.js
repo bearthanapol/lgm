@@ -1,45 +1,37 @@
-const fs = require('fs').promises;
-const path = require('path');
+const { getDatabase } = require('./database');
 
-const USERS_FILE = path.join(__dirname, 'users.json');
-
-/**
- * Initialize users file if it doesn't exist
- */
-async function initializeUsersFile() {
-  try {
-    await fs.access(USERS_FILE);
-  } catch (error) {
-    // File doesn't exist, create it with empty array
-    await fs.writeFile(USERS_FILE, JSON.stringify([], null, 2), 'utf8');
-  }
-}
+const COLLECTION_NAME = 'users';
 
 /**
- * Get all users from the JSON file
+ * Get all users from MongoDB
  * @returns {Promise<Array>} Array of user objects
  */
 async function getUsers() {
   try {
-    await initializeUsersFile();
-    const data = await fs.readFile(USERS_FILE, 'utf8');
-    return JSON.parse(data);
+    const db = getDatabase();
+    const users = await db.collection(COLLECTION_NAME).find({}).toArray();
+    return users;
   } catch (error) {
-    console.error('Error reading users file:', error);
+    console.error('Error reading users from database:', error);
     throw new Error('Failed to read users data');
   }
 }
 
 /**
- * Save users array to the JSON file
+ * Save users array to MongoDB (for migration purposes)
  * @param {Array} users - Array of user objects to save
  * @returns {Promise<void>}
  */
 async function saveUsers(users) {
   try {
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), 'utf8');
+    const db = getDatabase();
+    // Clear existing users and insert new ones
+    await db.collection(COLLECTION_NAME).deleteMany({});
+    if (users.length > 0) {
+      await db.collection(COLLECTION_NAME).insertMany(users);
+    }
   } catch (error) {
-    console.error('Error writing users file:', error);
+    console.error('Error writing users to database:', error);
     throw new Error('Failed to save users data');
   }
 }
@@ -51,8 +43,9 @@ async function saveUsers(users) {
  */
 async function findUserByUsername(username) {
   try {
-    const users = await getUsers();
-    return users.find(user => user.username === username) || null;
+    const db = getDatabase();
+    const user = await db.collection(COLLECTION_NAME).findOne({ username });
+    return user;
   } catch (error) {
     console.error('Error finding user by username:', error);
     throw new Error('Failed to find user');
@@ -66,8 +59,9 @@ async function findUserByUsername(username) {
  */
 async function findUserByEmail(email) {
   try {
-    const users = await getUsers();
-    return users.find(user => user.email === email) || null;
+    const db = getDatabase();
+    const user = await db.collection(COLLECTION_NAME).findOne({ email });
+    return user;
   } catch (error) {
     console.error('Error finding user by email:', error);
     throw new Error('Failed to find user');
@@ -81,8 +75,12 @@ async function findUserByEmail(email) {
  */
 async function findUserByIGN(ign) {
   try {
-    const users = await getUsers();
-    return users.find(user => user.ign && user.ign.toLowerCase() === ign.toLowerCase()) || null;
+    const db = getDatabase();
+    // Case-insensitive search using regex
+    const user = await db.collection(COLLECTION_NAME).findOne({ 
+      ign: { $regex: new RegExp(`^${ign}$`, 'i') }
+    });
+    return user;
   } catch (error) {
     console.error('Error finding user by IGN:', error);
     throw new Error('Failed to find user');
@@ -96,10 +94,9 @@ async function findUserByIGN(ign) {
  */
 async function createUser(userData) {
   try {
-    const users = await getUsers();
-    users.push(userData);
-    await saveUsers(users);
-    return userData;
+    const db = getDatabase();
+    const result = await db.collection(COLLECTION_NAME).insertOne(userData);
+    return { ...userData, _id: result.insertedId };
   } catch (error) {
     console.error('Error creating user:', error);
     throw new Error('Failed to create user');

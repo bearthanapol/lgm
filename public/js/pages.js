@@ -2080,18 +2080,18 @@ function renderGuildWarTeams(teams) {
   const innerCitadel3Div = document.getElementById('inner-citadel-3-teams');
   const mainCastleDiv = document.getElementById('main-castle-teams');
 
-  // Create teams for each zone with independent numbering
-  const outerBailey1Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-1', heroes: [], _id: null}));
-  const outerBailey2Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-2', heroes: [], _id: null}));
-  const outerBailey3Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-3', heroes: [], _id: null}));
-  const outerBailey4Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-4', heroes: [], _id: null}));
-  const outerBailey5Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-5', heroes: [], _id: null}));
+  // Create teams for each zone with database team numbers (1-115) and display numbers
+  const outerBailey1Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, originalTeamNumber: i + 1, displayNumber: i + 1, zone: 'outer-bailey-1', heroes: [], _id: null}));
+  const outerBailey2Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 11, originalTeamNumber: i + 11, displayNumber: i + 1, zone: 'outer-bailey-2', heroes: [], _id: null}));
+  const outerBailey3Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 21, originalTeamNumber: i + 21, displayNumber: i + 1, zone: 'outer-bailey-3', heroes: [], _id: null}));
+  const outerBailey4Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 31, originalTeamNumber: i + 31, displayNumber: i + 1, zone: 'outer-bailey-4', heroes: [], _id: null}));
+  const outerBailey5Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 41, originalTeamNumber: i + 41, displayNumber: i + 1, zone: 'outer-bailey-5', heroes: [], _id: null}));
 
-  const innerCitadel1Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 1, zone: 'inner-citadel-1', heroes: [], _id: null}));
-  const innerCitadel2Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 1, zone: 'inner-citadel-2', heroes: [], _id: null}));
-  const innerCitadel3Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 1, zone: 'inner-citadel-3', heroes: [], _id: null}));
+  const innerCitadel1Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 51, originalTeamNumber: i + 51, displayNumber: i + 1, zone: 'inner-citadel-1', heroes: [], _id: null}));
+  const innerCitadel2Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 66, originalTeamNumber: i + 66, displayNumber: i + 1, zone: 'inner-citadel-2', heroes: [], _id: null}));
+  const innerCitadel3Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 81, originalTeamNumber: i + 81, displayNumber: i + 1, zone: 'inner-citadel-3', heroes: [], _id: null}));
 
-  const mainCastleTeams = Array.from({length: 20}, (_, i) => ({teamNumber: i + 1, zone: 'main-castle', heroes: [], _id: null}));
+  const mainCastleTeams = Array.from({length: 20}, (_, i) => ({teamNumber: i + 96, originalTeamNumber: i + 96, displayNumber: i + 1, zone: 'main-castle', heroes: [], _id: null}));
   
   // Merge with existing teams from database
   teams.forEach(team => {
@@ -2130,7 +2130,7 @@ function renderGuildWarTeams(teams) {
     }
     
     if (targetArray && newNumber > 0 && newNumber <= targetArray.length) {
-      targetArray[newNumber - 1] = {...team, teamNumber: newNumber};
+      targetArray[newNumber - 1] = {...team, displayNumber: newNumber, originalTeamNumber: oldNumber};
     }
   });
 
@@ -2233,6 +2233,11 @@ function renderGuildWarTeamCard(team) {
   const speedColor = speedType === 'lower' ? '#4CAF50' : '#d32f2f';
   const speedText = speedType === 'lower' ? 'Lower' : 'Higher';
   
+  // Use originalTeamNumber for API calls (database team number 1-115)
+  // Use displayNumber for display (zone-based numbering 1-10, 1-15, 1-20)
+  const apiTeamNumber = team.originalTeamNumber || team.teamNumber;
+  const displayTeamNumber = team.displayNumber || team.teamNumber;
+  
   // Check user role
   const canEdit = canEditGuildWar();
 
@@ -2250,13 +2255,13 @@ function renderGuildWarTeamCard(team) {
     // Master/Assistant: Show Find Team and Save Team buttons
     buttonsHtml = `
       <button 
-        onclick="openFindTeamModal(${team.teamNumber}, '${team._id}')"
+        onclick="openFindTeamModal(${apiTeamNumber}, '${team._id}')"
         style="width: 100%; padding: 4px; background: #2196F3; color: white; border: none; border-radius: 3px; font-size: 10px; cursor: pointer;"
       >
         Find Team
       </button>
       <button 
-        onclick="saveEnemyTeam(${team.teamNumber}, '${team._id}')"
+        onclick="saveEnemyTeam(${apiTeamNumber}, '${team._id}')"
         style="width: 100%; padding: 4px; background: #4CAF50; color: white; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; font-weight: bold;"
       >
         Save Team
@@ -2266,7 +2271,7 @@ function renderGuildWarTeamCard(team) {
     // Member: Show Battle Record button only
     buttonsHtml = `
       <button 
-        onclick="openBattleRecordModal(${team.teamNumber})"
+        onclick="openBattleRecordModal(${apiTeamNumber})"
         style="width: 100%; padding: 4px; background: #FF9800; color: white; border: none; border-radius: 3px; font-size: 10px; cursor: pointer; font-weight: bold;"
       >
         Battle Record
@@ -2275,9 +2280,9 @@ function renderGuildWarTeamCard(team) {
   }
 
   return `
-    <div class="guild-war-team-card" data-team-number="${team.teamNumber}" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 6px; padding: 8px; opacity: ${opacity};">
+    <div class="guild-war-team-card" data-team-number="${apiTeamNumber}" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 6px; padding: 8px; opacity: ${opacity};">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <h3 style="color: var(--color-orange); margin: 0; font-size: 12px;">Team ${team.teamNumber}</h3>
+        <h3 style="color: var(--color-orange); margin: 0; font-size: 12px;">Team ${displayTeamNumber}</h3>
         <div style="display: flex; align-items: center; gap: 4px;">
           <!-- Speed Control -->
           <div style="display: flex; gap: 2px;">
@@ -2326,7 +2331,7 @@ function renderGuildWarTeamCard(team) {
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; pointer-events: ${canEdit ? pointerEvents : 'none'};">
-        ${heroSlots.map(({ hero, slotIndex }) => renderGuildWarHeroSlot(hero, slotIndex, team.teamNumber, team._id)).join('')}
+        ${heroSlots.map(({ hero, slotIndex }) => renderGuildWarHeroSlot(hero, slotIndex, apiTeamNumber, team._id)).join('')}
       </div>
       
       <div style="margin-top: 6px; pointer-events: auto; display: flex; flex-direction: column; gap: 4px;">
@@ -2849,35 +2854,78 @@ async function selectHeroFromDatabase(heroname, heroPicture) {
       return;
     }
 
-    // If team doesn't exist, create it first
+    // If team doesn't exist, check if it exists in database first, then create if needed
     if (!teamId || teamId === 'null') {
-      // Get enemy name from the input field if it was typed
-      const teamCard = document.querySelector(`[data-team-number="${currentHeroSelectorTeamNumber}"]`);
-      let enemyName = '';
-      if (teamCard) {
-        const enemyNameInput = teamCard.querySelector('input[placeholder="Enemy Name"]');
-        if (enemyNameInput) {
-          enemyName = enemyNameInput.value.trim();
-        }
-      }
+      console.log(`[Hero Selection] Team ID is null, checking if team ${currentHeroSelectorTeamNumber} exists in database...`);
       
-      const createResponse = await fetch('/api/guildwar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: username,
-          teamNumber: currentHeroSelectorTeamNumber,
-          heroes: [],
-          enemyName: enemyName
-        })
-      });
+      // First, try to fetch the team by team number to see if it already exists
+      const checkResponse = await fetch(`/api/guildwar/number/${currentHeroSelectorTeamNumber}?username=${encodeURIComponent(username)}`);
+      
+      // Only try to parse if response is ok (200-299)
+      if (checkResponse.ok) {
+        const checkData = await checkResponse.json();
+        if (checkData.success && checkData.data) {
+          // Team already exists, use its ID
+          console.log(`[Hero Selection] Team ${currentHeroSelectorTeamNumber} exists! Using ID: ${checkData.data._id}`);
+          teamId = checkData.data._id;
+          currentHeroes = checkData.data.heroes || [];
+        }
+      } else if (checkResponse.status === 404) {
+        // Team doesn't exist (404), safe to create it
+        console.log(`[Hero Selection] Team ${currentHeroSelectorTeamNumber} not found (404), creating new team...`);
+        const teamCard = document.querySelector(`[data-team-number="${currentHeroSelectorTeamNumber}"]`);
+        let enemyName = '';
+        if (teamCard) {
+          const enemyNameInput = teamCard.querySelector('input[placeholder="Enemy Name"]');
+          if (enemyNameInput) {
+            enemyName = enemyNameInput.value.trim();
+          }
+        }
+        
+        const createResponse = await fetch('/api/guildwar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: username,
+            teamNumber: currentHeroSelectorTeamNumber,
+            heroes: [],
+            enemyName: enemyName
+          })
+        });
 
-      const createData = await createResponse.json();
-      if (!createData.success) {
-        throw new Error(createData.error);
+        const createData = await createResponse.json();
+        if (!createData.success) {
+          console.error(`[Hero Selection] Failed to create team: ${createData.error}`);
+          
+          // If it failed because team already exists, try to fetch it again
+          if (createData.error && createData.error.includes('already exists')) {
+            console.log(`[Hero Selection] Team already exists, fetching it...`);
+            const retryResponse = await fetch(`/api/guildwar/number/${currentHeroSelectorTeamNumber}?username=${encodeURIComponent(username)}`);
+            if (retryResponse.ok) {
+              const retryData = await retryResponse.json();
+              if (retryData.success && retryData.data) {
+                teamId = retryData.data._id;
+                currentHeroes = retryData.data.heroes || [];
+                console.log(`[Hero Selection] Successfully fetched existing team with ID: ${teamId}`);
+              } else {
+                throw new Error('Team exists but could not be fetched');
+              }
+            } else {
+              throw new Error('Team exists but could not be fetched');
+            }
+          } else {
+            throw new Error(createData.error);
+          }
+        } else {
+          console.log(`[Hero Selection] Team created successfully with ID: ${createData.data._id}`);
+          teamId = createData.data._id;
+        }
+      } else {
+        // Some other error occurred
+        console.error(`[Hero Selection] Unexpected response status: ${checkResponse.status}`);
+        const errorData = await checkResponse.json();
+        throw new Error(errorData.error || 'Failed to check team existence');
       }
-
-      teamId = createData.data._id;
     } else {
       // Fetch current team to get existing heroes
       const teamResponse = await fetch(`/api/guildwar/${teamId}`);
