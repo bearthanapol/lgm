@@ -5136,6 +5136,16 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
     return;
   }
 
+  // Merge position data into heroDetails
+  const enrichedHeroDetails = heroDetails.map(hero => {
+    const position = commentData.heroPositions[hero.heroName];
+    const order = position === 'F' ? 1 : position === 'B' ? 3 : null;
+    return {
+      ...hero,
+      order: order
+    };
+  });
+
   try {
     // Save to current selection
     // IMPORTANT: The selection should be saved for targetUsername (the person whose heroes are being used)
@@ -5143,6 +5153,7 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
     console.log('[Pick Team] commentData.pet value:', commentData.pet);
     console.log('[Pick Team] commentData.pet type:', typeof commentData.pet);
     console.log('[Pick Team] Assigning target to:', targetUsername, '(picked by:', username, ')');
+    console.log('[Pick Team] Enriched hero details with positions:', enrichedHeroDetails);
     
     const selectionResponse = await fetch('/api/guildwar/selection', {
       method: 'POST',
@@ -5151,7 +5162,7 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
         username: targetUsername, // The person whose heroes are being used
         targetUsername: targetUsername, // Same as username for consistency
         targetHeroes,
-        heroDetails,
+        heroDetails: enrichedHeroDetails,
         enemyZone,
         enemyTeamNumber,
         comment: commentData.teamComment,
@@ -5178,7 +5189,7 @@ async function pickGuildWarTeam(targetUsername, heroNamesStr, teamDataKey) {
         username: targetUsername, // The person whose heroes are being used
         targetUsername: targetUsername, // Same as username for consistency
         targetHeroes,
-        heroDetails,
+        heroDetails: enrichedHeroDetails,
         enemyZone,
         enemyTeamNumber,
         comment: commentData.teamComment,
@@ -5358,29 +5369,26 @@ async function loadGWarNoti() {
                     </div>
                   ` : ''}
                   <div style="color: #333; font-weight: bold; font-size: 12px; margin-bottom: 4px; text-align: center;">${heroName}</div>
-                  <div style="display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; margin-bottom: 4px;">
-                    ${order ? `
-                      <span style="background: ${formationColor}; color: white; padding: 1px 6px; border-radius: 8px; font-size: 9px; font-weight: bold;">
-                        ${formation}
-                      </span>
-                    ` : ''}
-                    <span style="color: #666; font-size: 10px;">C ${starLevel}</span>
-                    ${ring ? `
-                      <span style="color: #4FC3F7; font-size: 10px;">${getRingFullName(ring)}</span>
-                    ` : ''}
-                  </div>
-                  ${skills.length > 0 ? `
+                  ${skills.length > 0 || order ? `
                   <div style="background: #f5f5f5; padding: 4px; border-radius: 3px; margin-bottom: ${heroComment ? '6px' : '0'};">
-                    <div style="font-size: 9px; color: #666; font-weight: bold; margin-bottom: 2px;">Skills:</div>
-                    <div style="display: flex; gap: 3px; justify-content: center; flex-wrap: wrap;">
-                      ${skills.map(skill => {
-                        const colors = {
-                          1: '#4CAF50',
-                          2: '#2196F3',
-                          3: '#FF9800'
-                        };
-                        return `<span style="background: ${colors[skill.order]}; color: white; padding: 2px 5px; border-radius: 6px; font-size: 8px; font-weight: bold;">${skill.order}. ${skill.name}</span>`;
-                      }).join('')}
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                      ${order ? `
+                        <span style="background: ${formationColor}; color: white; padding: 2px 6px; border-radius: 8px; font-size: 9px; font-weight: bold;">
+                          ${formation}
+                        </span>
+                      ` : '<span></span>'}
+                      ${skills.length > 0 ? `
+                        <div style="display: flex; gap: 3px; flex-wrap: wrap;">
+                          ${skills.map(skill => {
+                            const colors = {
+                              1: '#4CAF50',
+                              2: '#2196F3',
+                              3: '#FF9800'
+                            };
+                            return `<span style="background: ${colors[skill.order]}; color: white; padding: 2px 5px; border-radius: 6px; font-size: 8px; font-weight: bold;">${skill.order}. ${skill.name}</span>`;
+                          }).join('')}
+                        </div>
+                      ` : ''}
                     </div>
                   </div>
                   ` : ''}
