@@ -374,6 +374,60 @@ router.post('/:id/cleanup', async (req, res) => {
 });
 
 /**
+ * PUT /api/guilds/:id/reset-password - Reset guild password (guild master only)
+ */
+router.put('/:id/reset-password', async (req, res) => {
+  try {
+    const { newPassword, guildMasterName } = req.body;
+
+    if (!newPassword || !guildMasterName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing newPassword or guildMasterName'
+      });
+    }
+
+    // Verify the requester is the guild master
+    const guild = await guildModel.getGuildById(req.params.id);
+    
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'Guild not found'
+      });
+    }
+
+    if (guild.guildMasterName !== guildMasterName) {
+      return res.status(403).json({
+        success: false,
+        error: 'Only the guild master can reset the password'
+      });
+    }
+
+    // Update the password using the dedicated function
+    const updated = await guildModel.updateGuildPassword(req.params.id, newPassword);
+
+    if (!updated) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to update password'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Guild password reset successfully'
+    });
+  } catch (error) {
+    console.error('Error resetting guild password:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset guild password'
+    });
+  }
+});
+
+/**
  * GET /api/guilds/debug/:guildName - Debug endpoint to see guild members
  */
 router.get('/debug/:guildName', async (req, res) => {

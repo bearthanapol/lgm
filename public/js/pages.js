@@ -1479,19 +1479,24 @@ async function loadGuildInfo() {
         const isMaster = member === userGuild.guildMasterName;
         
         if (isGuildMaster && !isMaster) {
-          // Show checkbox for guild master to assign assistants
+          // Show checkbox for guild master to assign assistants and kick button
           return `
             <li style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input 
-                  type="checkbox" 
-                  ${isAssistant ? 'checked' : ''} 
-                  onchange="toggleAssistant('${userGuild._id}', '${member}', this.checked)"
-                  style="cursor: pointer;"
-                />
-                <span>${member}</span>
-                ${isAssistant ? '<span style="color: #4FC3F7; font-size: 12px;">(Assistant)</span>' : ''}
-              </label>
+              <input 
+                type="checkbox" 
+                ${isAssistant ? 'checked' : ''} 
+                onchange="toggleAssistant('${userGuild._id}', '${member}', this.checked)"
+                style="cursor: pointer;"
+              />
+              <span>${member}</span>
+              ${isAssistant ? '<span style="color: #4FC3F7; font-size: 12px;">(Assistant)</span>' : ''}
+              <button 
+                onclick="kickMember('${userGuild._id}', '${member}')"
+                style="padding: 4px 8px; background: #d32f2f; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; margin-left: 8px;"
+                title="Kick ${member} from guild"
+              >
+                ❌ Kick
+              </button>
             </li>
           `;
         } else {
@@ -1520,6 +1525,17 @@ async function loadGuildInfo() {
           <strong style="color: var(--color-orange);">Members:</strong>
           <span style="color: var(--color-white);">${userGuild.guildMemberNames ? userGuild.guildMemberNames.length : 0}</span>
         </div>
+        ${isGuildMaster ? `
+        <div style="margin-bottom: 15px;">
+          <button 
+            onclick="resetGuildPassword('${userGuild._id}', '${username}')"
+            style="padding: 8px 16px; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold;"
+            title="Reset your guild password"
+          >
+            🔑 Reset Guild Password
+          </button>
+        </div>
+        ` : ''}
         <div>
           <strong style="color: var(--color-orange);">Member List:</strong>
           ${isGuildMaster ? '<p style="color: #4FC3F7; font-size: 13px; margin-top: 5px; margin-bottom: 10px;">✓ Check members to assign as assistants</p>' : ''}
@@ -1702,11 +1718,31 @@ async function joinGuild(guildName, guildPassword) {
  * Leave guild
  */
 async function leaveGuild(guildId, username) {
-  if (!confirm('Are you sure you want to leave this guild?')) {
-    return;
-  }
-
   try {
+    // First, check if user is guild master and if there are other members
+    const guildResponse = await fetch(`/api/guilds/${guildId}`);
+    const guildData = await guildResponse.json();
+    
+    if (guildData.success && guildData.data) {
+      const guild = guildData.data;
+      const isGuildMaster = guild.guildMasterName === username;
+      const otherMembers = guild.guildMemberNames.filter(m => m !== username);
+      
+      if (isGuildMaster && otherMembers.length > 0) {
+        alert(
+          '❌ Cannot leave guild!\n\n' +
+          'As Guild Master, you must kick all members before leaving.\n\n' +
+          `Current members: ${otherMembers.length}\n` +
+          'Use the "❌ Kick" button next to each member to remove them first.'
+        );
+        return;
+      }
+    }
+    
+    if (!confirm('Are you sure you want to leave this guild?')) {
+      return;
+    }
+
     const response = await fetch(`/api/guilds/${guildId}/members/${username}`, {
       method: 'DELETE'
     });
@@ -1722,6 +1758,38 @@ async function leaveGuild(guildId, username) {
   } catch (error) {
     console.error('Error leaving guild:', error);
     alert('Error leaving guild: ' + error.message);
+  }
+}
+
+/**
+ * Kick member from guild (guild master only)
+ */
+async function kickMember(guildId, memberName) {
+  if (!confirm(`Are you sure you want to kick ${memberName} from the guild?`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/guilds/${guildId}/members/${memberName}`, {
+      method: 'DELETE'
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.success(`${memberName} has been kicked from the guild`);
+      } else {
+        alert(`${memberName} has been kicked from the guild`);
+      }
+      // Reload guild info to refresh the member list
+      await loadGuildInfo();
+    } else {
+      alert('Failed to kick member: ' + data.error);
+    }
+  } catch (error) {
+    console.error('Error kicking member:', error);
+    alert('Error kicking member: ' + error.message);
   }
 }
 
@@ -1769,6 +1837,55 @@ async function toggleAssistant(guildId, memberName, isAssistant) {
     }
     // Reload to reset checkbox state
     await loadGuildInfo();
+  }
+}
+
+/**
+ * Reset guild password (guild master only)
+ */
+async function resetGuildPassword(guildId, guildMasterName) {
+  const newPassword = prompt('Enter new guild password:');
+  
+  if (!newPassword || !newPassword.trim()) {
+    return;
+  }
+
+  const confirmPassword = prompt('Confirm new guild password:');
+  
+  if (newPassword !== confirmPassword) {
+    alert('❌ Passwords do not match!');
+    return;
+  }
+
+  if (newPassword.length < 4) {
+    alert('❌ Password must be at least 4 characters long!');
+    return;
+  }
+
+  if (!confirm(`Reset guild password to: "${newPassword}"?\n\nMake sure to share this with your guild members!`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/guilds/${guildId}/reset-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        newPassword: newPassword.trim(),
+        guildMasterName: guildMasterName
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      alert(`✅ Guild password reset successfully!\n\nNew password: ${newPassword}\n\nShare this with your guild members.`);
+    } else {
+      alert(`❌ Failed to reset password: ${data.error || 'Unknown error'}`);
+    }
+  } catch (error) {
+    console.error('Error resetting guild password:', error);
+    alert('❌ Error resetting guild password');
   }
 }
 

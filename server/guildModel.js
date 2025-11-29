@@ -142,6 +142,28 @@ async function updateGuild(guildId, updateData) {
 }
 
 /**
+ * Update guild password
+ */
+async function updateGuildPassword(guildId, newPassword) {
+  const db = getDatabase();
+  
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+  const result = await db.collection(COLLECTION_NAME).updateOne(
+    { _id: new ObjectId(guildId) },
+    { 
+      $set: { 
+        guildPassword: hashedPassword,
+        updatedAt: new Date()
+      }
+    }
+  );
+  
+  return result.modifiedCount > 0;
+}
+
+/**
  * Delete guild
  */
 async function deleteGuild(guildId) {
@@ -249,6 +271,7 @@ module.exports = {
   addMemberToGuild,
   removeMemberFromGuild,
   updateGuild,
+  updateGuildPassword,
   deleteGuild,
   addAssistantToGuild,
   removeAssistantFromGuild,
