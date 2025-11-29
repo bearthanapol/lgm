@@ -19,16 +19,27 @@ Migrated user storage from local JSON file to MongoDB, which persists data acros
 
 ## How to Migrate Existing Users
 
-If you have existing users in `server/users.json`, run the migration script:
+### Option 1: Automatic Migration (Recommended)
+The system now **automatically migrates** users from `users.json` to MongoDB when they login. Just deploy the code and existing users will be migrated on their first login.
+
+### Option 2: Manual Migration
+If you want to migrate all users immediately, use the cleanup script:
 
 ```bash
-node server/migrateUsersToMongo.js
+node server/cleanupUsers.js migrate
 ```
 
 This will:
 1. Read all users from `users.json`
-2. Save them to MongoDB
+2. Save them to MongoDB (skipping duplicates)
 3. Create a backup file `users.json.backup`
+
+### Option 3: List Users
+To see all users currently in MongoDB:
+
+```bash
+node server/cleanupUsers.js list
+```
 
 ## After Migration
 
@@ -36,6 +47,19 @@ This will:
 - New user registrations will be saved to MongoDB
 - Login will work after server restart/redeploy
 - You can safely delete `users.json` after successful migration
+
+## Cleanup Commands
+
+```bash
+# List all users in MongoDB
+node server/cleanupUsers.js list
+
+# Migrate users from JSON to MongoDB
+node server/cleanupUsers.js migrate
+
+# Clear all users from MongoDB (WARNING: Destructive!)
+node server/cleanupUsers.js clear
+```
 
 ## Testing
 

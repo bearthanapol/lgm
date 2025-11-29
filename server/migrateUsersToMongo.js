@@ -3,6 +3,9 @@
  * Run this once to migrate existing users
  */
 
+// Load environment variables
+require('dotenv').config();
+
 const fs = require('fs').promises;
 const path = require('path');
 const { connectToDatabase, closeDatabaseConnection } = require('./database');
