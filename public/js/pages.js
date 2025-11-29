@@ -173,27 +173,15 @@ function renderCastleRushPage() {
 function renderGuildWarPage() {
   return `
     <div class="page-content">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-        <div>
-          <h1 style="margin: 0 0 5px 0;">Guild War - Enemy Teams</h1>
-          <p style="margin: 0;">View and manage all 115 enemy teams for Guild War.</p>
-        </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">Guild War - Enemy Teams</h1>
         <button 
           onclick="resetGuildWar()"
           style="padding: 10px 20px; background: #d32f2f; color: white; border: none; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; white-space: nowrap;"
-          title="Reset all teams (clear defeated status and star levels)"
+          title="Reset all teams"
         >
           🔄 Reset Guild War
         </button>
-      </div>
-      
-      <div style="margin-top: 20px; margin-bottom: 20px;">
-        <input 
-          type="text" 
-          id="team-search" 
-          placeholder="Search by team number or hero name..." 
-          style="width: 100%; max-width: 400px; padding: 10px; border: 2px solid var(--color-orange); border-radius: 4px; background: white; color: black;"
-        />
       </div>
       
       <div id="guild-war-loading" style="text-align: center; padding: 40px; color: var(--color-light-gray);">
@@ -202,50 +190,95 @@ function renderGuildWarPage() {
       
       <div id="guild-war-content" style="display: none;">
         <!-- Outer Bailey Sections (Teams 1-50) -->
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Outer Bailey 1 (Teams 1-10)</h2>
+        <div id="outer-bailey-1-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Outer Bailey 1</h2>
+            <button onclick="toggleZone('outer-bailey-1')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="outer-bailey-1-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="outer-bailey-1-teams"></div>
         </div>
 
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Outer Bailey 2 (Teams 11-20)</h2>
+        <div id="outer-bailey-2-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Outer Bailey 2</h2>
+            <button onclick="toggleZone('outer-bailey-2')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="outer-bailey-2-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="outer-bailey-2-teams"></div>
         </div>
 
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Outer Bailey 3 (Teams 21-30)</h2>
+        <div id="outer-bailey-3-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Outer Bailey 3</h2>
+            <button onclick="toggleZone('outer-bailey-3')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="outer-bailey-3-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="outer-bailey-3-teams"></div>
         </div>
 
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Outer Bailey 4 (Teams 31-40)</h2>
+        <div id="outer-bailey-4-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Outer Bailey 4</h2>
+            <button onclick="toggleZone('outer-bailey-4')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="outer-bailey-4-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="outer-bailey-4-teams"></div>
         </div>
 
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Outer Bailey 5 (Teams 41-50)</h2>
+        <div id="outer-bailey-5-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Outer Bailey 5</h2>
+            <button onclick="toggleZone('outer-bailey-5')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="outer-bailey-5-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="outer-bailey-5-teams"></div>
         </div>
         
         <!-- Inner Citadel Sections (Teams 51-95) -->
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Inner Citadel 1 (Teams 51-65)</h2>
+        <div id="inner-citadel-1-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Inner Citadel 1</h2>
+            <button onclick="toggleZone('inner-citadel-1')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="inner-citadel-1-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="inner-citadel-1-teams"></div>
         </div>
 
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Inner Citadel 2 (Teams 66-80)</h2>
+        <div id="inner-citadel-2-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Inner Citadel 2</h2>
+            <button onclick="toggleZone('inner-citadel-2')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="inner-citadel-2-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="inner-citadel-2-teams"></div>
         </div>
 
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Inner Citadel 3 (Teams 81-95)</h2>
+        <div id="inner-citadel-3-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Inner Citadel 3</h2>
+            <button onclick="toggleZone('inner-citadel-3')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="inner-citadel-3-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="inner-citadel-3-teams"></div>
         </div>
         
         <!-- Main Castle Section (Teams 96-115) -->
-        <div style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-          <h2 style="color: var(--color-orange); margin: 0 0 15px 0; font-size: 20px;">Main Castle (Teams 96-115)</h2>
+        <div id="main-castle-container" class="zone-container" style="background: var(--color-dark-gray); border: 2px solid var(--color-orange); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 style="color: var(--color-orange); margin: 0; font-size: 20px;">Main Castle</h2>
+            <button onclick="toggleZone('main-castle')" style="padding: 6px 12px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+              <span id="main-castle-toggle">▼ Hide</span>
+            </button>
+          </div>
           <div id="main-castle-teams"></div>
         </div>
       </div>
@@ -2025,14 +2058,6 @@ async function loadGuildWarTeams() {
 
     renderGuildWarTeams(teams);
 
-    // Setup search listener
-    const searchInput = document.getElementById('team-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        filterGuildWarTeams(e.target.value, teams);
-      });
-    }
-
   } catch (error) {
     console.error('Error loading guild war teams:', error);
     loadingDiv.innerHTML = `<p style="color: #d32f2f;">Error: ${error.message}</p>`;
@@ -2055,18 +2080,59 @@ function renderGuildWarTeams(teams) {
   const innerCitadel3Div = document.getElementById('inner-citadel-3-teams');
   const mainCastleDiv = document.getElementById('main-castle-teams');
 
-  // Filter teams by range
-  const outerBailey1Teams = teams.filter(t => t.teamNumber >= 1 && t.teamNumber <= 10);
-  const outerBailey2Teams = teams.filter(t => t.teamNumber >= 11 && t.teamNumber <= 20);
-  const outerBailey3Teams = teams.filter(t => t.teamNumber >= 21 && t.teamNumber <= 30);
-  const outerBailey4Teams = teams.filter(t => t.teamNumber >= 31 && t.teamNumber <= 40);
-  const outerBailey5Teams = teams.filter(t => t.teamNumber >= 41 && t.teamNumber <= 50);
+  // Create teams for each zone with independent numbering
+  const outerBailey1Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-1', heroes: [], _id: null}));
+  const outerBailey2Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-2', heroes: [], _id: null}));
+  const outerBailey3Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-3', heroes: [], _id: null}));
+  const outerBailey4Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-4', heroes: [], _id: null}));
+  const outerBailey5Teams = Array.from({length: 10}, (_, i) => ({teamNumber: i + 1, zone: 'outer-bailey-5', heroes: [], _id: null}));
 
-  const innerCitadel1Teams = teams.filter(t => t.teamNumber >= 51 && t.teamNumber <= 65);
-  const innerCitadel2Teams = teams.filter(t => t.teamNumber >= 66 && t.teamNumber <= 80);
-  const innerCitadel3Teams = teams.filter(t => t.teamNumber >= 81 && t.teamNumber <= 95);
+  const innerCitadel1Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 1, zone: 'inner-citadel-1', heroes: [], _id: null}));
+  const innerCitadel2Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 1, zone: 'inner-citadel-2', heroes: [], _id: null}));
+  const innerCitadel3Teams = Array.from({length: 15}, (_, i) => ({teamNumber: i + 1, zone: 'inner-citadel-3', heroes: [], _id: null}));
 
-  const mainCastleTeams = teams.filter(t => t.teamNumber >= 96 && t.teamNumber <= 115);
+  const mainCastleTeams = Array.from({length: 20}, (_, i) => ({teamNumber: i + 1, zone: 'main-castle', heroes: [], _id: null}));
+  
+  // Merge with existing teams from database
+  teams.forEach(team => {
+    const oldNumber = team.teamNumber;
+    let targetArray = null;
+    let newNumber = 0;
+    
+    // Map old continuous numbering to new zone-based numbering
+    if (oldNumber >= 1 && oldNumber <= 10) {
+      targetArray = outerBailey1Teams;
+      newNumber = oldNumber;
+    } else if (oldNumber >= 11 && oldNumber <= 20) {
+      targetArray = outerBailey2Teams;
+      newNumber = oldNumber - 10;
+    } else if (oldNumber >= 21 && oldNumber <= 30) {
+      targetArray = outerBailey3Teams;
+      newNumber = oldNumber - 20;
+    } else if (oldNumber >= 31 && oldNumber <= 40) {
+      targetArray = outerBailey4Teams;
+      newNumber = oldNumber - 30;
+    } else if (oldNumber >= 41 && oldNumber <= 50) {
+      targetArray = outerBailey5Teams;
+      newNumber = oldNumber - 40;
+    } else if (oldNumber >= 51 && oldNumber <= 65) {
+      targetArray = innerCitadel1Teams;
+      newNumber = oldNumber - 50;
+    } else if (oldNumber >= 66 && oldNumber <= 80) {
+      targetArray = innerCitadel2Teams;
+      newNumber = oldNumber - 65;
+    } else if (oldNumber >= 81 && oldNumber <= 95) {
+      targetArray = innerCitadel3Teams;
+      newNumber = oldNumber - 80;
+    } else if (oldNumber >= 96 && oldNumber <= 115) {
+      targetArray = mainCastleTeams;
+      newNumber = oldNumber - 95;
+    }
+    
+    if (targetArray && newNumber > 0 && newNumber <= targetArray.length) {
+      targetArray[newNumber - 1] = {...team, teamNumber: newNumber};
+    }
+  });
 
   // Grid style
   // Grid style
@@ -2408,37 +2474,6 @@ function renderGuildWarHeroSlot(hero, slotIndex, teamNumber, teamId) {
 }
 
 /**
- * Filter teams based on search query
- */
-function filterGuildWarTeams(teams, query) {
-  const teamsDiv = document.getElementById('guild-war-teams');
-  const searchQuery = query.toLowerCase().trim();
-
-  if (!searchQuery) {
-    renderGuildWarTeams(teams);
-    return;
-  }
-
-  const filteredTeams = teams.filter(team => {
-    // Search by team number
-    if (team.teamNumber.toString().includes(searchQuery)) {
-      return true;
-    }
-
-    // Search by hero name
-    if (team.heroes && team.heroes.some(hero =>
-      hero.heroname && hero.heroname.toLowerCase().includes(searchQuery)
-    )) {
-      return true;
-    }
-
-    return false;
-  });
-
-  renderGuildWarTeams(filteredTeams);
-}
-
-/**
  * Add hero to team
  */
 async function addHeroToTeam(teamNumber, teamId) {
@@ -2647,7 +2682,8 @@ async function moveHeroPosition(teamNumber, teamId, heroname, direction) {
       body: JSON.stringify({
         skills: hero.skills,
         ring: hero.ring,
-        order: newOrder
+        order: newOrder,
+        starLevel: hero.starLevel || 0
       })
     });
 
@@ -2925,7 +2961,8 @@ async function setHeroPosition(teamNumber, teamId, heroname, position) {
       body: JSON.stringify({
         skills: hero.skills,
         ring: hero.ring,
-        order: position
+        order: position,
+        starLevel: hero.starLevel || 0
       })
     });
 
@@ -2992,7 +3029,8 @@ async function cycleSkillNumber(teamNumber, teamId, heroname, skillIndex, direct
       body: JSON.stringify({
         skills: skills,
         ring: hero.ring,
-        order: hero.order
+        order: hero.order,
+        starLevel: hero.starLevel || 0
       })
     });
 
@@ -3593,6 +3631,31 @@ async function resetGuildWar() {
   } catch (error) {
     console.error('Error resetting Guild War:', error);
     alert('Error resetting Guild War: ' + error.message);
+  }
+}
+
+/**
+ * Toggle zone visibility (hide/show)
+ */
+function toggleZone(zoneId) {
+  const teamsDiv = document.getElementById(`${zoneId}-teams`);
+  const toggleSpan = document.getElementById(`${zoneId}-toggle`);
+  const container = document.getElementById(`${zoneId}-container`);
+  
+  if (!teamsDiv || !toggleSpan || !container) return;
+  
+  if (teamsDiv.style.display === 'none') {
+    // Show the zone - full width
+    teamsDiv.style.display = 'grid';
+    container.style.width = '100%';
+    container.style.display = 'block';
+    toggleSpan.textContent = '▼ Hide';
+  } else {
+    // Hide the zone - compact inline
+    teamsDiv.style.display = 'none';
+    container.style.width = 'auto';
+    container.style.display = 'inline-block';
+    toggleSpan.textContent = '▶ Show';
   }
 }
 
