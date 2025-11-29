@@ -24,6 +24,48 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * POST /api/heroes/reorder - Update hero display order (must be before /:id route)
+ */
+router.post('/reorder', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    console.log('[DEBUG] Reorder request received');
+    console.log('[DEBUG] Request body:', req.body);
+    
+    const { order } = req.body;
+    
+    if (!order || !Array.isArray(order)) {
+      console.log('[DEBUG] Invalid order data');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order data'
+      });
+    }
+    
+    console.log('[DEBUG] Updating order for', order.length, 'heroes');
+    
+    // Update each hero's displayOrder
+    const updatePromises = order.map(item => {
+      console.log('[DEBUG] Updating hero', item.heroId, 'to order', item.displayOrder);
+      return heroModel.updateHeroOrder(item.heroId, item.displayOrder);
+    });
+    
+    const results = await Promise.all(updatePromises);
+    console.log('[DEBUG] Update results:', results);
+    
+    res.json({
+      success: true,
+      message: 'Hero order updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating hero order:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update hero order'
+    });
+  }
+});
+
+/**
  * GET /api/heroes/:id - Get hero by ID
  */
 router.get('/:id', async (req, res) => {
@@ -57,11 +99,11 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
   try {
     const { name, type, attack, defense, hp, rarity, description, imageUrl } = req.body;
     
-    // Validation - only name and rarity are required
-    if (!name || !rarity) {
+    // Validation - only name is required
+    if (!name) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required fields: name, rarity'
+        error: 'Missing required field: name'
       });
     }
     
@@ -71,7 +113,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
       attack: attack ? parseInt(attack) : 0,
       defense: defense ? parseInt(defense) : 0,
       hp: hp ? parseInt(hp) : 0,
-      rarity,
+      rarity: rarity || '',
       description: description || '',
       imageUrl: imageUrl || ''
     };

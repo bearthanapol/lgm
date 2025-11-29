@@ -12,6 +12,7 @@ const guildWarRoutes = require('./server/guildWarRoutes');
 const newsRoutes = require('./server/newsRoutes');
 const uploadRoutes = require('./server/uploadRoutes');
 const teamRoutes = require('./server/teamRoutes');
+const petRoutes = require('./server/petRoutes');
 const debugImageRoutes = require('./server/debugImageRoutes');
 const analyticsRoutes = require('./server/analyticsRoutes');
 const { connectToDatabase, closeDatabaseConnection } = require('./server/database');
@@ -29,8 +30,17 @@ app.use(cors({
 // JSON body parser
 app.use(express.json());
 
-// Static file serving from /public directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Static file serving from /public directory with cache control
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    // Disable caching for JavaScript files during development
+    if (filePath.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -41,6 +51,7 @@ app.use('/api/guildwar', guildWarRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/team', teamRoutes);
+app.use('/api/pets', petRoutes);
 app.use('/api/debug', debugImageRoutes);
 app.use('/api/analytics', analyticsRoutes);
 

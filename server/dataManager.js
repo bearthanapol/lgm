@@ -75,6 +75,21 @@ async function findUserByEmail(email) {
 }
 
 /**
+ * Find a user by IGN (In-Game Name)
+ * @param {string} ign - IGN to search for
+ * @returns {Promise<Object|null>} User object or null if not found
+ */
+async function findUserByIGN(ign) {
+  try {
+    const users = await getUsers();
+    return users.find(user => user.ign && user.ign.toLowerCase() === ign.toLowerCase()) || null;
+  } catch (error) {
+    console.error('Error finding user by IGN:', error);
+    throw new Error('Failed to find user');
+  }
+}
+
+/**
  * Create a new user
  * @param {Object} userData - User data object
  * @returns {Promise<Object>} Created user object
@@ -96,5 +111,6 @@ module.exports = {
   saveUsers,
   findUserByUsername,
   findUserByEmail,
+  findUserByIGN,
   createUser
 };

@@ -341,4 +341,68 @@ router.get('/role/:username', async (req, res) => {
   }
 });
 
+/**
+ * POST /api/guilds/:id/cleanup - Remove specific members from guild (admin/master only)
+ */
+router.post('/:id/cleanup', async (req, res) => {
+  try {
+    const { membersToRemove } = req.body;
+
+    if (!membersToRemove || !Array.isArray(membersToRemove)) {
+      return res.status(400).json({
+        success: false,
+        error: 'membersToRemove array is required'
+      });
+    }
+
+    // Remove each member
+    for (const memberName of membersToRemove) {
+      await guildModel.removeMemberFromGuild(req.params.id, memberName);
+    }
+
+    res.json({
+      success: true,
+      message: `Removed ${membersToRemove.length} members from guild`
+    });
+  } catch (error) {
+    console.error('Error cleaning up guild:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to cleanup guild'
+    });
+  }
+});
+
+/**
+ * GET /api/guilds/debug/:guildName - Debug endpoint to see guild members
+ */
+router.get('/debug/:guildName', async (req, res) => {
+  try {
+    const guild = await guildModel.getGuildByName(req.params.guildName);
+
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'Guild not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        guildName: guild.guildName,
+        guildMaster: guild.guildMasterName,
+        members: guild.guildMemberNames || [],
+        assistants: guild.guildAssistants || []
+      }
+    });
+  } catch (error) {
+    console.error('Error debugging guild:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to debug guild'
+    });
+  }
+});
+
 module.exports = router;

@@ -60,12 +60,14 @@ function renderSidebar(section, activePage = '') {
     `;
   } else if (section === 'team') {
     sidebarLinks = `
-      <li><a href="/team/my-team" class="sidebar-link ${activePage === 'my-team' ? 'active' : ''}" data-page="my-team">My Team</a></li>
+      <li><a href="/team/my-team" class="sidebar-link ${activePage === 'my-team' ? 'active' : ''}" data-page="my-team">Heroes</a></li>
+      <li><a href="/team/pets" class="sidebar-link ${activePage === 'pets' ? 'active' : ''}" data-page="pets">Pets</a></li>
       <li><a href="/team/gwar-noti" class="sidebar-link ${activePage === 'gwar-noti' ? 'active' : ''}" data-page="gwar-noti">Guild War Target</a></li>
     `;
   } else if (section === 'admin') {
     sidebarLinks = `
       <li><a href="/admin/manage" class="sidebar-link ${activePage === 'manage' ? 'active' : ''}" data-page="manage">Manage Heroes</a></li>
+      <li><a href="/admin/pets" class="sidebar-link ${activePage === 'pets' ? 'active' : ''}" data-page="pets">Pet Management</a></li>
       <li><a href="/admin/news" class="sidebar-link ${activePage === 'news' ? 'active' : ''}" data-page="news">News & Updates</a></li>
       <li><a href="/admin/analytics" class="sidebar-link ${activePage === 'analytics' ? 'active' : ''}" data-page="analytics">Analytics</a></li>
     `;

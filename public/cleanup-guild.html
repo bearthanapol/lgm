@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guild Cleanup Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #ff6600;
+      margin-top: 0;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    textarea {
+      min-height: 100px;
+      font-family: monospace;
+    }
+    button {
+      background: #ff6600;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background: #e55a00;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+      display: none;
+    }
+    .result.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .result.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      border-left: 4px solid #2196F3;
+    }
+    .guild-list {
+      margin-top: 20px;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+    }
+    .guild-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .guild-item:hover {
+      background: #e0e0e0;
+    }
+    .guild-item.selected {
+      background: #ff6600;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Guild Cleanup Tool</h1>
+    
+    <div class="info">
+      <strong>Instructions:</strong><br>
+      1. Click "Load Guilds" to see all guilds<br>
+      2. Click on a guild to select it<br>
+      3. Enter usernames to remove (one per line)<br>
+      4. Click "Remove Members"
+    </div>
+
+    <button onclick="loadGuilds()" style="margin-bottom: 20px;">Load Guilds</button>
+
+    <div id="guild-list" class="guild-list" style="display: none;"></div>
+
+    <div class="form-group">
+      <label>Selected Guild ID:</label>
+      <input type="text" id="guildId" placeholder="Click a guild above to select" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Selected Guild Name:</label>
+      <input type="text" id="guildName" placeholder="Guild name will appear here" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Members to Remove (one per line):</label>
+      <textarea id="members" placeholder="test_user&#10;bear"></textarea>
+    </div>
+
+    <button onclick="cleanupGuild()" id="cleanupBtn">Remove Members</button>
+
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    let selectedGuildId = null;
+    let selectedGuildName = null;
+
+    async function loadGuilds() {
+      try {
+        const response = await fetch('/api/guilds');
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error);
+        }
+
+        const guilds = data.data || [];
+        const listDiv = document.getElementById('guild-list');
+        
+        if (guilds.length === 0) {
+          listDiv.innerHTML = '<p style="color: #888; text-align: center;">No guilds found</p>';
+          listDiv.style.display = 'block';
+          return;
+        }
+
+        listDiv.innerHTML = guilds.map(guild => `
+          <div class="guild-item" onclick="selectGuild('${guild._id}', '${guild.guildName}', ${JSON.stringify(guild.guildMemberNames || []).replace(/"/g, '&quot;')})">
+            <strong>${guild.guildName}</strong><br>
+            <small>Master: ${guild.guildMasterName}</small><br>
+            <small>Members: ${(guild.guildMemberNames || []).join(', ') || 'None'}</small>
+          </div>
+        `).join('');
+
+        listDiv.style.display = 'block';
+      } catch (error) {
+        showResult('Error loading guilds: ' + error.message, 'error');
+      }
+    }
+
+    function selectGuild(guildId, guildName, members) {
+      selectedGuildId = guildId;
+      selectedGuildName = guildName;
+      
+      document.getElementById('guildId').value = guildId;
+      document.getElementById('guildName').value = guildName;
+
+      // Highlight selected guild
+      document.querySelectorAll('.guild-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      event.target.closest('.guild-item').classList.add('selected');
+
+      // Show current members in textarea for easy editing
+      if (members && members.length > 0) {
+        document.getElementById('members').placeholder = 'Current members:\n' + members.join('\n');
+      }
+    }
+
+    async function cleanupGuild() {
+      const guildId = document.getElementById('guildId').value;
+      const membersText = document.getElementById('members').value;
+
+      if (!guildId) {
+        showResult('Please select a guild first', 'error');
+        return;
+      }
+
+      if (!membersText.trim()) {
+        showResult('Please enter at least one member to remove', 'error');
+        return;
+      }
+
+      const membersToRemove = membersText.split('\n')
+        .map(m => m.trim())
+        .filter(m => m.length > 0);
+
+      if (membersToRemove.length === 0) {
+        showResult('Please enter valid usernames', 'error');
+        return;
+      }
+
+      if (!confirm(`Remove ${membersToRemove.length} member(s) from ${selectedGuildName}?\n\n${membersToRemove.join('\n')}`)) {
+        return;
+      }
+
+      const btn = document.getElementById('cleanupBtn');
+      btn.disabled = true;
+      btn.textContent = 'Removing...';
+
+      try {
+        const response = await fetch(`/api/guilds/${guildId}/cleanup`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ membersToRemove })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error);
+        }
+
+        showResult(`✅ Successfully removed ${membersToRemove.length} member(s) from ${selectedGuildName}`, 'success');
+        document.getElementById('members').value = '';
+        
+        // Reload guilds to show updated list
+        setTimeout(() => loadGuilds(), 1000);
+      } catch (error) {
+        showResult('❌ Error: ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Remove Members';
+      }
+    }
+
+    function showResult(message, type) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = message;
+      resultDiv.className = 'result ' + type;
+      resultDiv.style.display = 'block';
+
+      setTimeout(() => {
+        resultDiv.style.display = 'none';
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

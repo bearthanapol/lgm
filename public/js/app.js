@@ -152,6 +152,24 @@ router.addRoute('/team/my-team', () => {
   }, 100);
 });
 
+router.addRoute('/team/pets', () => {
+  const pageContent = renderUserPetsPage();
+  renderMainLayout('team', 'pets', pageContent);
+
+  // Load user pets after rendering
+  setTimeout(async () => {
+    try {
+      if (typeof loadUserPets === 'function') {
+        await loadUserPets();
+      } else {
+        console.error('loadUserPets function not found');
+      }
+    } catch (error) {
+      console.error('Error loading user pets:', error);
+    }
+  }, 100);
+});
+
 router.addRoute('/team/gwar-noti', () => {
   const pageContent = renderGWarNotiPage();
   renderMainLayout('team', 'gwar-noti', pageContent);
@@ -190,6 +208,28 @@ router.addRoute('/admin/manage', () => {
 
     // Attach image preview handler
     attachImagePreviewHandler();
+  }, 100);
+});
+
+// Admin Pet Management Route
+router.addRoute('/admin/pets', () => {
+  const userInfo = authManager.getUserInfo();
+  const userRole = userInfo ? (userInfo.role || 'gmember') : 'gmember';
+  
+  if (userRole !== 'admin') {
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Access denied. Admin privileges required.');
+    }
+    router.navigate('/home');
+    return;
+  }
+
+  const pageContent = renderAdminPetPage();
+  renderMainLayout('admin', 'pets', pageContent);
+
+  setTimeout(async () => {
+    await loadPets();
+    attachPetFormHandler();
   }, 100);
 });
 
@@ -249,22 +289,33 @@ async function loadHeroes() {
     const result = await response.json();
 
     if (result.success && result.data.length > 0) {
-      // Simple grid layout - show all heroes
-      const heroesHTML = result.data.map(hero => {
+      // Sort heroes by displayOrder (if exists) or keep original order
+      const sortedHeroes = result.data.sort((a, b) => {
+        const orderA = a.displayOrder !== undefined ? a.displayOrder : 999999;
+        const orderB = b.displayOrder !== undefined ? b.displayOrder : 999999;
+        return orderA - orderB;
+      });
+      
+      // Draggable grid layout
+      const heroesHTML = sortedHeroes.map((hero, index) => {
         const heroName = hero.name || hero.heroname;
         const imageUrl = hero.imageUrl || hero.heroPicture;
         const cacheBuster = `?t=${Date.now()}`;
         
         return `
-          <div style="background-color: #ffffff; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center;">
+          <div class="hero-card-draggable" 
+               draggable="true" 
+               data-hero-id="${hero._id}"
+               data-hero-order="${index}"
+               style="background-color: #ffffff; padding: 12px; border: 2px solid var(--color-orange); border-radius: 4px; text-align: center; cursor: move; transition: all 0.2s;">
+            <div style="color: #999; font-size: 10px; margin-bottom: 4px;">Order: ${index + 1}</div>
             ${imageUrl ?
               `<img src="${imageUrl}${cacheBuster}" alt="${heroName}" style="width: 100%; height: auto; max-width: 100px; object-fit: contain; border-radius: 4px; border: 2px solid #ddd; display: block; margin: 0 auto 8px; background-color: #f9f9f9;">` :
               '<div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; margin: 0 auto 8px; border: 2px solid #ddd;">No Image</div>'
             }
-            <div style="color: var(--color-orange); font-weight: bold; font-size: 13px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${heroName}">${heroName}</div>
-            <div style="color: #666; font-size: 11px; margin-bottom: 8px;">${hero.rarity}</div>
+            <div style="color: var(--color-orange); font-weight: bold; font-size: 13px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${heroName}">${heroName}</div>
             <div style="display: flex; gap: 4px; justify-content: center;">
-              <button onclick="editHeroImage('${hero._id}', '${imageUrl}', '${heroName}', '${hero.rarity}')" style="padding: 4px 8px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; flex: 1;">Edit</button>
+              <button onclick="editHeroImage('${hero._id}', '${imageUrl}', '${heroName}')" style="padding: 4px 8px; background-color: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; flex: 1;">Edit</button>
               <button onclick="deleteHero('${hero._id}')" style="padding: 4px 8px; background-color: #ff3333; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 10px; flex: 1;">Del</button>
             </div>
           </div>
@@ -272,16 +323,154 @@ async function loadHeroes() {
       }).join('');
 
       heroListContainer.innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;">
+        <div style="margin-bottom: 15px; padding: 10px; background: #e3f2fd; border-radius: 4px; border-left: 4px solid #2196F3;">
+          <strong style="color: #1976d2;">💡 Tip:</strong> <span style="color: #666;">Drag and drop hero cards to reorder them. This order will be used throughout the website!</span>
+          <div style="margin-top: 8px; color: #666; font-size: 13px;">Total heroes: ${sortedHeroes.length}</div>
+        </div>
+        <div id="hero-grid-draggable" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; position: relative;">
           ${heroesHTML}
         </div>
       `;
+      
+      // Initialize drag and drop with performance optimizations
+      initializeHeroDragAndDrop();
     } else {
       heroListContainer.innerHTML = '<p style="color: #666666;">No heroes found. Add your first hero above!</p>';
     }
   } catch (error) {
     console.error('Error loading heroes:', error);
     heroListContainer.innerHTML = '<p style="color: #ff3333;">Failed to load heroes. Please refresh the page.</p>';
+  }
+}
+
+// Initialize drag and drop for hero cards (optimized for 200+ heroes)
+function initializeHeroDragAndDrop() {
+  const cards = document.querySelectorAll('.hero-card-draggable');
+  let draggedElement = null;
+  let saveTimeout = null;
+  
+  cards.forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      draggedElement = card;
+      card.style.opacity = '0.5';
+      card.style.cursor = 'grabbing';
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', card.innerHTML);
+    });
+    
+    card.addEventListener('dragend', (e) => {
+      card.style.opacity = '1';
+      card.style.cursor = 'move';
+      draggedElement = null;
+      
+      // Reset all cards
+      cards.forEach(c => {
+        c.style.borderColor = c.classList.contains('owned') ? 'var(--color-orange)' : 'var(--color-orange)';
+        c.style.transform = 'scale(1)';
+      });
+    });
+    
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      if (draggedElement && draggedElement !== card) {
+        card.style.borderColor = '#4CAF50';
+        card.style.transform = 'scale(1.05)';
+      }
+    });
+    
+    card.addEventListener('dragleave', (e) => {
+      card.style.borderColor = 'var(--color-orange)';
+      card.style.transform = 'scale(1)';
+    });
+    
+    card.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      card.style.borderColor = 'var(--color-orange)';
+      card.style.transform = 'scale(1)';
+      
+      if (draggedElement && draggedElement !== card) {
+        // Get all cards in current order
+        const grid = document.getElementById('hero-grid-draggable');
+        const allCards = Array.from(grid.querySelectorAll('.hero-card-draggable'));
+        
+        // Find positions
+        const draggedIndex = allCards.indexOf(draggedElement);
+        const targetIndex = allCards.indexOf(card);
+        
+        // Reorder in DOM
+        if (draggedIndex < targetIndex) {
+          card.parentNode.insertBefore(draggedElement, card.nextSibling);
+        } else {
+          card.parentNode.insertBefore(draggedElement, card);
+        }
+        
+        // Debounce save to avoid too many requests when dragging multiple items
+        if (saveTimeout) {
+          clearTimeout(saveTimeout);
+        }
+        
+        saveTimeout = setTimeout(async () => {
+          await saveHeroOrder();
+          saveTimeout = null;
+        }, 500); // Wait 500ms after last drop before saving
+      }
+    });
+  });
+  
+  console.log(`[Hero Reorder] Initialized drag-and-drop for ${cards.length} heroes`);
+}
+
+// Save hero order to server
+async function saveHeroOrder() {
+  try {
+    const grid = document.getElementById('hero-grid-draggable');
+    const cards = Array.from(grid.querySelectorAll('.hero-card-draggable'));
+    
+    const orderData = cards.map((card, index) => ({
+      heroId: card.dataset.heroId,
+      displayOrder: index
+    }));
+    
+    console.log('[DEBUG] Saving hero order:', orderData);
+    
+    const token = localStorage.getItem('lgm_auth_token');
+    console.log('[DEBUG] Token exists:', !!token);
+    
+    const response = await fetch('/api/heroes/reorder', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ order: orderData })
+    });
+    
+    console.log('[DEBUG] Response status:', response.status);
+    
+    const result = await response.json();
+    console.log('[DEBUG] Response data:', result);
+    
+    if (result.success) {
+      if (typeof toastManager !== 'undefined') {
+        toastManager.success('Hero order saved!');
+      }
+      // Reload to show updated order numbers
+      await loadHeroes();
+    } else {
+      console.error('[DEBUG] Save failed:', result.error);
+      if (typeof toastManager !== 'undefined') {
+        toastManager.error(result.error || 'Failed to save order');
+      }
+    }
+  } catch (error) {
+    console.error('Error saving hero order:', error);
+    if (typeof toastManager !== 'undefined') {
+      toastManager.error('Failed to save order');
+    }
   }
 }
 
@@ -321,7 +510,7 @@ async function deleteHero(heroId) {
 }
 
 // Global function to edit hero image
-async function editHeroImage(heroId, imageUrl, heroName, rarity) {
+async function editHeroImage(heroId, imageUrl, heroName) {
   // Extract original filename from URL
   const urlParts = imageUrl.split('/');
   const originalFilename = urlParts[urlParts.length - 1];
@@ -658,7 +847,6 @@ function attachHeroFormHandler() {
       // Create hero with uploaded image URL
       const heroData = {
         name: document.getElementById('hero-name').value,
-        rarity: document.getElementById('hero-rarity').value,
         imageUrl: imageUrl
       };
 

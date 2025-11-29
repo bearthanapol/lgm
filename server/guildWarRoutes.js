@@ -325,10 +325,11 @@ router.get('/order/:order', async (req, res) => {
 /**
  * POST /api/guildwar/search - Search for users with specific heroes
  * (Moved here from teamRoutes due to routing issues)
+ * Filters out heroes that are already used in Guild War
  */
 router.post('/search', async (req, res) => {
   try {
-    const { heroes } = req.body;
+    const { heroes, username } = req.body;
 
     if (!heroes || !Array.isArray(heroes) || heroes.length === 0) {
       return res.status(400).json({
@@ -340,6 +341,51 @@ router.post('/search', async (req, res) => {
     // Import from userTeamModel
     const { searchTeamsByHeroes } = require('./userTeamModel');
     const teams = await searchTeamsByHeroes(heroes);
+
+    // If username is provided, filter out used heroes
+    if (username) {
+      const guild = await guildModel.getGuildByMember(username);
+      if (guild) {
+        const usedHeroesMap = await guildWarModel.getUsedHeroesForGuild(guild.guildName);
+        
+        // Filter teams to mark used heroes and pets
+        const filteredTeams = teams.map(team => {
+          const userUsedHeroes = usedHeroesMap[team.username];
+          
+          if (userUsedHeroes && userUsedHeroes.heroes) {
+            // Mark which heroes are used
+            const availableHeroes = team.heroes.filter(hero => 
+              !userUsedHeroes.heroes.includes(hero.heroName)
+            );
+            
+            return {
+              ...team,
+              usedHeroes: userUsedHeroes.heroes,
+              usedPets: userUsedHeroes.pets || [],
+              battles: userUsedHeroes.battles || [],
+              assignedTo: userUsedHeroes.enemyTeamNumber,
+              availableHeroes: availableHeroes,
+              hasAllHeroesAvailable: availableHeroes.length === team.heroes.length
+            };
+          }
+          
+          return {
+            ...team,
+            usedHeroes: [],
+            usedPets: [],
+            battles: [],
+            availableHeroes: team.heroes,
+            hasAllHeroesAvailable: true
+          };
+        });
+        
+        res.json({
+          success: true,
+          data: filteredTeams
+        });
+        return;
+      }
+    }
 
     res.json({
       success: true,
@@ -360,7 +406,9 @@ router.post('/search', async (req, res) => {
  */
 router.post('/selection', async (req, res) => {
   try {
-    const { username, targetUsername, targetHeroes, heroDetails, enemyZone, enemyTeamNumber, comment, heroComments } = req.body;
+    const { username, targetUsername, targetHeroes, heroDetails, enemyZone, enemyTeamNumber, comment, heroComments, heroSkills, formation, pet } = req.body;
+
+    console.log('[Selection Save] Received pet data:', pet);
 
     if (!username || !targetUsername) {
       return res.status(400).json({
@@ -376,7 +424,10 @@ router.post('/selection', async (req, res) => {
       enemyZone: enemyZone || 'Unknown Zone',
       enemyTeamNumber: enemyTeamNumber || 0,
       comment: comment || '',
-      heroComments: heroComments || {}
+      heroComments: heroComments || {},
+      heroSkills: heroSkills || {},
+      formation: formation || '',
+      pet: pet || null
     });
 
     res.json({ success: true });
@@ -390,7 +441,28 @@ router.post('/selection', async (req, res) => {
 });
 
 /**
- * GET /api/guildwar/selection/:username - Get saved selection
+ * GET /api/guildwar/selections/:username - Get ALL saved selections for a user
+ */
+router.get('/selections/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const selections = await guildWarModel.getAllGuildWarSelections(username);
+
+    res.json({
+      success: true,
+      data: selections
+    });
+  } catch (error) {
+    console.error('Error fetching selections:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch selections'
+    });
+  }
+});
+
+/**
+ * GET /api/guildwar/selection/:username - Get saved selection (single, for backward compatibility)
  */
 router.get('/selection/:username', async (req, res) => {
   try {
@@ -435,6 +507,53 @@ router.post('/battle-history', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to save battle history'
+    });
+  }
+});
+
+/**
+ * GET /api/guildwar/battle-history/team/:enemyTeamNumber - Get ALL battle history for an enemy team (all guild members)
+ */
+router.get('/battle-history/team/:enemyTeamNumber', async (req, res) => {
+  try {
+    const { enemyTeamNumber } = req.params;
+    const { username } = req.query;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required'
+      });
+    }
+    
+    // Get user's guild
+    const guild = await guildModel.getGuildByMember(username);
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'User is not in a guild'
+      });
+    }
+    
+    // Get all guild members
+    const guildMembers = guild.guildMemberNames || [];
+    const guildMaster = guild.guildMasterName;
+    const guildAssistants = guild.guildAssistants || [];
+    const allMembers = [...new Set([guildMaster, ...guildAssistants, ...guildMembers])];
+    
+    // Get battle history for all guild members for this enemy team
+    const { getBattleHistoryForTeam } = require('./guildWarModel');
+    const history = await getBattleHistoryForTeam(allMembers, parseInt(enemyTeamNumber));
+    
+    res.json({
+      success: true,
+      data: history
+    });
+  } catch (error) {
+    console.error('Error fetching team battle history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch battle history'
     });
   }
 });
@@ -514,6 +633,36 @@ router.put('/battle-history/:battleId/speed', async (req, res) => {
 });
 
 /**
+ * DELETE /api/guildwar/battle-history/:battleId - Delete battle history entry
+ */
+router.delete('/battle-history/:battleId', async (req, res) => {
+  try {
+    const { battleId } = req.params;
+    
+    const { deleteBattleHistory } = require('./guildWarModel');
+    const deleted = await deleteBattleHistory(battleId);
+    
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        error: 'Battle not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Battle deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting battle:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to delete battle'
+    });
+  }
+});
+
+/**
  * GET /api/guildwar/battle-history/:username - Get all battle history for user
  */
 router.get('/battle-history/:username', async (req, res) => {
@@ -561,7 +710,7 @@ router.post('/reset', async (req, res) => {
     
     res.json({
       success: true,
-      message: `Reset ${result.modifiedCount} teams successfully`,
+      message: `Deleted ${result.deletedCount} teams and cleared all battle history`,
       data: result
     });
   } catch (error) {
@@ -569,6 +718,74 @@ router.post('/reset', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to reset Guild War'
+    });
+  }
+});
+
+/**
+ * GET /api/guildwar/used-heroes - Get all used heroes for the guild
+ * Query param: username (to determine guild)
+ */
+router.get('/used-heroes', async (req, res) => {
+  try {
+    const { username } = req.query;
+    
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required'
+      });
+    }
+    
+    // Get user's guild
+    const guild = await guildModel.getGuildByMember(username);
+    if (!guild) {
+      return res.status(404).json({
+        success: false,
+        error: 'User is not in a guild'
+      });
+    }
+    
+    const usedHeroes = await guildWarModel.getUsedHeroesForGuild(guild.guildName);
+    
+    res.json({
+      success: true,
+      data: usedHeroes
+    });
+  } catch (error) {
+    console.error('Error fetching used heroes:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch used heroes'
+    });
+  }
+});
+
+/**
+ * DELETE /api/guildwar/unassign/:username - Unassign a team (free up heroes)
+ */
+router.delete('/unassign/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    const result = await guildWarModel.unassignTeam(username);
+    
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        error: 'No assignment found for this user'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Team unassigned successfully'
+    });
+  } catch (error) {
+    console.error('Error unassigning team:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to unassign team'
     });
   }
 });

@@ -185,10 +185,14 @@ router.post('/save', async (req, res) => {
       });
     }
 
-    // Use a default username if not provided (for testing)
-    const user = username || 'test_user';
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username is required'
+      });
+    }
 
-    console.log(`Saving ${heroes.length} heroes for user: ${user}`);
+    console.log(`Saving ${heroes.length} heroes for user: ${username}`);
 
     // Transform the hero data to match the expected format
     const formattedHeroes = heroes.map((hero, index) => ({
@@ -200,7 +204,7 @@ router.post('/save', async (req, res) => {
     }));
 
     // Save to user's team
-    const savedTeam = await saveUserTeam(user, formattedHeroes);
+    const savedTeam = await saveUserTeam(username, formattedHeroes);
 
     res.json({
       success: true,
@@ -294,6 +298,38 @@ router.post('/search', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to search teams'
+    });
+  }
+});
+
+/**
+ * POST /api/teams/bulk-add - Add multiple heroes to user's team at once
+ */
+router.post('/bulk-add', async (req, res) => {
+  try {
+    const { username, heroes } = req.body;
+    
+    if (!username || !heroes || !Array.isArray(heroes)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username and heroes array are required'
+      });
+    }
+    
+    const { saveUserTeam } = require('./userTeamModel');
+    
+    // Save the team with all heroes
+    await saveUserTeam(username, heroes);
+    
+    res.json({
+      success: true,
+      message: `Added ${heroes.length} heroes to team`
+    });
+  } catch (error) {
+    console.error('Error bulk adding heroes:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to add heroes'
     });
   }
 });

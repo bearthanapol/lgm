@@ -59,5 +59,77 @@
     "passwordHash": "$2b$10$3vjBEd78a44CqUJgP.eH4OQisgZv/ppQKzv4fNBT6nAiHwmA/aowS",
     "role": "gmember",
     "createdAt": "2025-11-28T04:58:41.025Z"
+  },
+  {
+    "id": "b45dd453-8ea5-49cd-a985-04d30d8cfb2f",
+    "username": "tum",
+    "ign": "tumsurang",
+    "passwordHash": "$2b$10$lG5yLnsjgAQICQ4gwXk3WOVN2NyatMnhpnOnAPpk8NphMto2rAq9i",
+    "role": "gmember",
+    "createdAt": "2025-11-28T16:13:47.375Z"
+  },
+  {
+    "id": "cc1056ba-9a52-454e-b141-265251a14330",
+    "username": "camel",
+    "ign": "camel",
+    "passwordHash": "$2b$10$Rwu/IXv9/ECRmeS46Qi4ZeyPhgKcmfN6veU8vbthsf8pWMvw1r8YK",
+    "role": "gmember",
+    "createdAt": "2025-11-28T16:52:06.279Z"
+  },
+  {
+    "id": "375ce644-d5b7-439a-8ee7-da5e994228ae",
+    "username": "crow",
+    "ign": "crow",
+    "passwordHash": "$2b$10$mfhm6.IPSatjYC0siaMeYeyqSJp1EVdFADNXuh2atdmUE.1IhCg2W",
+    "role": "gmember",
+    "createdAt": "2025-11-28T16:52:45.421Z"
+  },
+  {
+    "id": "941895bf-6ff1-4595-a8a9-fb356cbb0064",
+    "username": "crab",
+    "ign": "crab",
+    "passwordHash": "$2b$10$rntIXjMpeppOWKrsXij5cuQcYrydfHxkI4LXXF6VLJPSAVguvIW4e",
+    "role": "gmember",
+    "createdAt": "2025-11-28T16:53:07.095Z"
+  },
+  {
+    "id": "ecb1ec4d-f0d9-482e-a25c-4291cc1dbbcb",
+    "username": "panther",
+    "ign": "panther",
+    "passwordHash": "$2b$10$KjChyUecBkWaxLeop1wiMuqepBcgbjQ9A/EWJhJsM4qVEfcBmAGdG",
+    "role": "gmember",
+    "createdAt": "2025-11-29T16:31:11.936Z"
+  },
+  {
+    "id": "b6a68e23-4fc8-4a93-a60f-7437dac28522",
+    "username": "parrot",
+    "ign": "parrot",
+    "passwordHash": "$2b$10$tVMbY7YXbBkTv.DoEWKx.u75C6nFiunTYaX8z.ZdKdU3/2njW8d8y",
+    "role": "gmember",
+    "createdAt": "2025-11-29T16:31:28.217Z"
+  },
+  {
+    "id": "1b5bcbf7-01fc-4184-869d-fcf80c7e0ef7",
+    "username": "panthe1",
+    "ign": "panther",
+    "passwordHash": "$2b$10$aG975HN4EFJoiQIXqBF00e.J9Rbhzm4W/JhNa.NFS8qAMg24qQnpu",
+    "role": "gmember",
+    "createdAt": "2025-11-29T16:32:07.726Z"
+  },
+  {
+    "id": "a601f47e-da40-4e5b-bdf9-c0aa1434bdf0",
+    "username": "planb",
+    "ign": "panther",
+    "passwordHash": "$2b$10$JKgEMXal.iJOMswgpa7wiOImRIVuq9E8e4KFvBsZJRKdWNkNrpPmS",
+    "role": "gmember",
+    "createdAt": "2025-11-29T16:35:50.017Z"
+  },
+  {
+    "id": "f6036acc-6fcc-402d-b9bd-d8123fedac24",
+    "username": "pelican",
+    "ign": "pelican",
+    "passwordHash": "$2b$10$NyaPUsBFZgcLTB8W.rC8IOGt5dRqy3JCWD2UQo7QdQO6JlZMCyzLm",
+    "role": "gmember",
+    "createdAt": "2025-11-29T16:36:45.797Z"
   }
 ]

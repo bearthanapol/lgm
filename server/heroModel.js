@@ -4,11 +4,14 @@ const { ObjectId } = require('mongodb');
 const COLLECTION_NAME = 'Hero_db';
 
 /**
- * Get all heroes
+ * Get all heroes sorted by displayOrder
  */
 async function getAllHeroes() {
   const db = getDatabase();
-  const heroes = await db.collection(COLLECTION_NAME).find({}).toArray();
+  const heroes = await db.collection(COLLECTION_NAME)
+    .find({})
+    .sort({ displayOrder: 1, _id: 1 }) // Sort by displayOrder first, then by _id for heroes without displayOrder
+    .toArray();
   return heroes;
 }
 
@@ -92,5 +95,38 @@ module.exports = {
   createHero,
   updateHero,
   deleteHero,
-  searchHeroes
+  searchHeroes,
+  updateHeroOrder
 };
+
+
+/**
+ * Update hero display order
+ */
+async function updateHeroOrder(heroId, displayOrder) {
+  const db = getDatabase();
+  const result = await db.collection(COLLECTION_NAME).updateOne(
+    { _id: new ObjectId(heroId) },
+    { $set: { displayOrder: displayOrder } }
+  );
+  return result.modifiedCount > 0;
+}
+
+
+
+
+/**
+ * Create index on displayOrder for better performance with large datasets
+ */
+async function createDisplayOrderIndex() {
+  try {
+    const db = getDatabase();
+    await db.collection(COLLECTION_NAME).createIndex({ displayOrder: 1 });
+    console.log('✓ Created index on displayOrder field');
+  } catch (error) {
+    console.error('Error creating displayOrder index:', error);
+  }
+}
+
+// Create index on startup
+createDisplayOrderIndex();

@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validateUsername, validatePassword, createUserObject } = require('./userModel');
-const { findUserByUsername, createUser } = require('./dataManager');
+const { findUserByUsername, findUserByIGN, createUser } = require('./dataManager');
 const { JWT_SECRET, requireAuth } = require('./authMiddleware');
 const { getUserRole } = require('./userRoleManager');
 
@@ -50,6 +50,15 @@ router.post('/signup', async (req, res) => {
       return res.status(409).json({ 
         success: false, 
         error: 'Username already exists' 
+      });
+    }
+
+    // Check for duplicate IGN
+    const existingUserByIGN = await findUserByIGN(ign);
+    if (existingUserByIGN) {
+      return res.status(409).json({ 
+        success: false, 
+        error: 'In-Game Name (IGN) already exists. Please choose a different IGN.' 
       });
     }
 

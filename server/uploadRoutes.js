@@ -81,4 +81,38 @@ router.post('/news-image', upload.single('image'), async (req, res) => {
   }
 });
 
+/**
+ * POST /api/upload/image - Generic image upload (for pets, etc.)
+ */
+router.post('/image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No image file provided'
+      });
+    }
+
+    const { originalname, buffer } = req.file;
+    
+    // Determine folder based on context or default to 'images/general'
+    const folder = req.body.folder || 'images/pets';
+    
+    // Upload to GitHub
+    const imageUrl = await uploadImageToGitHub(buffer, originalname, folder);
+    
+    res.json({
+      success: true,
+      imageUrl: imageUrl,
+      message: 'Image uploaded successfully'
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to upload image'
+    });
+  }
+});
+
 module.exports = router;
